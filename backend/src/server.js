@@ -9,7 +9,7 @@ import { inngest, functions } from "./lib/inngest.js";
 import { clerkMiddleware } from "@clerk/express"
 import chatRoutes from "./routes/chatRoutes.js"
 import sessionRoute from "./routes/sessionRoute.js"
-
+import compilerRoute from "./routes/compilerRoute.js"
 
 const app = express()
 
@@ -22,8 +22,9 @@ app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }))
 app.use(clerkMiddleware()) // Add Clerk middleware to handle authentication req.auth()
 
 app.use("/api/inngest", serve({ client: inngest, functions }))
-app.use("api/chat", chatRoutes)
-app.use("api/sessions", sessionRoute)
+app.use("/api/chat", chatRoutes)
+app.use("/api/sessions", sessionRoute)
+app.use("/api/compiler", compilerRoute)
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "success from backend" })
