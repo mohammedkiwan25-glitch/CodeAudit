@@ -141,8 +141,8 @@ function ProblemPage() {
             </div>
 
             {/* MOBILE layout - stacked */}
-            <div className='flex-1 flex flex-col overflow-auto md:hidden'>
-                <div className='h-auto'>
+            <div className='flex-1 flex flex-col overflow-y-auto md:hidden'>
+                <div className='min-h-fit'>
                     <ProblemDescription
                         problem={currentProblem}
                         currentProblemId={currentProblemId}
@@ -150,7 +150,7 @@ function ProblemPage() {
                         allProblems={Object.values(PROBLEMS)}
                     />
                 </div>
-                <div className='h-64'>
+                <div className='min-h-[400px]'>
                     <CodeEditorPanel
                         selectedLanguage={selectedLanguage}
                         code={code}
@@ -160,7 +160,7 @@ function ProblemPage() {
                         onRunCode={handleRunCode}
                     />
                 </div>
-                <div className='h-40'>
+                <div className='min-h-[200px]'>
                     <OutputPanel output={output} />
                 </div>
             </div>
