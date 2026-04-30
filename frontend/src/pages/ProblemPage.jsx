@@ -105,9 +105,9 @@ function ProblemPage() {
         <div className='h-screen w-screen bg-base-100 flex flex-col'>
             <Navbar />
 
-            <div className='flex-1'>
+            {/* DESKTOP layout - panels */}
+            <div className='flex-1 hidden md:block'>
                 <PanelGroup direction='horizontal'>
-                    {/* left panel- problem desc */}
                     <Panel defaultSize={40} minSize={30}>
                         <ProblemDescription
                             problem={currentProblem}
@@ -119,10 +119,8 @@ function ProblemPage() {
 
                     <PanelResizeHandle className='w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize' />
 
-                    {/* right panel- code editor & output */}
                     <Panel defaultSize={60} minSize={30}>
                         <PanelGroup direction='vertical'>
-                            {/* top panel- code editor */}
                             <Panel defaultSize={70} minSize={30}>
                                 <CodeEditorPanel
                                     selectedLanguage={selectedLanguage}
@@ -133,20 +131,38 @@ function ProblemPage() {
                                     onRunCode={handleRunCode}
                                 />
                             </Panel>
-
                             <PanelResizeHandle className='h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize' />
-
-
-                            {/* bottom panel- output pannel */}
                             <Panel defaultSize={30} minSize={30}>
                                 <OutputPanel output={output} />
                             </Panel>
-
                         </PanelGroup>
                     </Panel>
-
                 </PanelGroup>
+            </div>
 
+            {/* MOBILE layout - stacked */}
+            <div className='flex-1 flex flex-col overflow-auto md:hidden'>
+                <div className='h-auto'>
+                    <ProblemDescription
+                        problem={currentProblem}
+                        currentProblemId={currentProblemId}
+                        onProblemChange={handleProblemChange}
+                        allProblems={Object.values(PROBLEMS)}
+                    />
+                </div>
+                <div className='h-64'>
+                    <CodeEditorPanel
+                        selectedLanguage={selectedLanguage}
+                        code={code}
+                        isRunning={isRunning}
+                        onLanguageChange={handleLanguageChange}
+                        onCodeChange={setCode}
+                        onRunCode={handleRunCode}
+                    />
+                </div>
+                <div className='h-40'>
+                    <OutputPanel output={output} />
+                </div>
             </div>
         </div>
     )
