@@ -4,13 +4,13 @@ import { formatDistanceToNow } from "date-fns";
 
 function RecentSessions({ sessions, isLoading }) {
   return (
-    <div className="card bg-base-100 border-2 border-accent/20 hover:border-accent/30 mt-8">
-      <div className="card-body">
-        <div className="flex items-center gap-3 mb-6">
+    <div className="card bg-base-100 border-2 border-accent/20 hover:border-accent/30 mt-6 sm:mt-8">
+      <div className="card-body p-4 sm:p-6">
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
           <div className="p-2 bg-gradient-to-br from-accent to-secondary rounded-xl">
-            <Clock className="w-5 h-5 text-white" />
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <h2 className="text-2xl font-black">Your Past Sessions</h2>
+          <h2 className="text-xl sm:text-2xl font-black">Your Past Sessions</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -37,22 +37,18 @@ function RecentSessions({ sessions, isLoading }) {
                   </div>
                 )}
 
-                <div className="card-body p-5">
+                <div className="card-body p-4 sm:p-5">
                   <div className="flex items-start gap-3 mb-4">
-                    <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        session.status === "active"
-                          ? "bg-gradient-to-br from-success to-success/70"
-                          : "bg-gradient-to-br from-primary to-secondary"
-                      }`}
-                    >
-                      <Code2 className="w-6 h-6 text-white" />
+                    <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                      session.status === "active"
+                        ? "bg-gradient-to-br from-success to-success/70"
+                        : "bg-gradient-to-br from-primary to-secondary"
+                    }`}>
+                      <Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-base mb-1 truncate">{session.problem}</h3>
-                      <span
-                        className={`badge badge-sm ${getDifficultyBadgeClass(session.difficulty)}`}
-                      >
+                      <h3 className="font-bold text-sm sm:text-base mb-1 truncate">{session.problem}</h3>
+                      <span className={`badge badge-sm ${getDifficultyBadgeClass(session.difficulty)}`}>
                         {session.difficulty}
                       </span>
                     </div>
@@ -60,18 +56,15 @@ function RecentSessions({ sessions, isLoading }) {
 
                   <div className="space-y-2 text-sm opacity-80 mb-4">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>
-                        {formatDistanceToNow(new Date(session.createdAt), {
-                          addSuffix: true,
-                        })}
+                      <Clock className="w-4 h-4 shrink-0" />
+                      <span className="text-xs sm:text-sm">
+                        {formatDistanceToNow(new Date(session.createdAt), { addSuffix: true })}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {session.participant ? "2" : "1"} participant
-                        {session.participant ? "s" : ""}
+                      <Users className="w-4 h-4 shrink-0" />
+                      <span className="text-xs sm:text-sm">
+                        {session.participant ? "2" : "1"} participant{session.participant ? "s" : ""}
                       </span>
                     </div>
                   </div>
