@@ -17,6 +17,7 @@ function VideoCallUI({ chatClient, channel }) {
   const { useCallCallingState, useParticipantCount } = useCallStateHooks();
   const callingState = useCallCallingState();
   const participantCount = useParticipantCount();
+  const visibleParticipantCount = Math.min(participantCount, 2);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   if (callingState === CallingState.JOINING) {
@@ -38,7 +39,8 @@ function VideoCallUI({ chatClient, channel }) {
           <div className="flex items-center gap-2">
             <UsersIcon className="w-5 h-5 text-primary" />
             <span className="font-semibold">
-              {participantCount} {participantCount === 1 ? "participant" : "participants"}
+              {visibleParticipantCount}{" "}
+              {visibleParticipantCount === 1 ? "participant" : "participants"}
             </span>
           </div>
           {chatClient && channel && (

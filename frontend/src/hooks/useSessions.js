@@ -31,12 +31,12 @@ export const useMyRecentSessions = () => {
     return result;
 };
 
-export const useSessionById = (id) => {
+export const useSessionById = (id, inviteToken) => {
     const result = useQuery({
-        queryKey: ["session", id],
-        queryFn: () => sessionApi.getSessionById(id),
+        queryKey: ["session", id, inviteToken],
+        queryFn: () => sessionApi.getSessionById(id, inviteToken),
         enabled: !!id,
-        refetchInterval: 5000, // refetch every 5 seconds to detect session status changes
+        refetchInterval: 1000, // refetch every second to sync session status and workspace changes
     });
 
     return result;
