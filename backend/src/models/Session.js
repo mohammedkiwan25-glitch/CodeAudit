@@ -29,6 +29,29 @@ const SessionSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    inviteToken: {
+        type: String,
+        unique: true,
+        sparse: true,
+    },
+    workspace: {
+        language: {
+            type: String,
+            default: "javascript",
+        },
+        code: {
+            type: String,
+            default: "",
+        },
+        output: {
+            type: mongoose.Schema.Types.Mixed,
+            default: null,
+        },
+        updatedAt: {
+            type: Date,
+            default: Date.now,
+        },
+    },
 }, {timestamps: true}
 )
 

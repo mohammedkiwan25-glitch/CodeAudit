@@ -10,17 +10,22 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [chatClient, setChatClient] = useState(null);
   const [channel, setChannel] = useState(null);
   const [isInitializingCall, setIsInitializingCall] = useState(true);
+  const callId = session?.callId;
+  const sessionStatus = session?.status;
 
   useEffect(() => {
     let videoCall = null;
     let chatClientInstance = null;
+    let cancelled = false;
 
     const initCall = async () => {
-      if (!session?.callId) return;
+      if (loadingSession) return;
+      if (!callId) return;
       if (!isHost && !isParticipant) return;
-      if (session.status === "completed") return;
+      if (sessionStatus === "completed") return;
 
       try {
+        setIsInitializingCall(true);
         const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
 
         const client = await initializeStreamClient(
@@ -32,10 +37,12 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
           token
         );
 
+        if (cancelled) return;
         setStreamClient(client);
 
-        videoCall = client.call("default", session.callId);
+        videoCall = client.call("default", callId);
         await videoCall.join({ create: true });
+        if (cancelled) return;
         setCall(videoCall);
 
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
@@ -49,23 +56,31 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
           },
           token
         );
+        if (cancelled) return;
         setChatClient(chatClientInstance);
 
-        const chatChannel = chatClientInstance.channel("messaging", session.callId);
+        const chatChannel = chatClientInstance.channel("messaging", callId);
         await chatChannel.watch();
+        if (cancelled) return;
         setChannel(chatChannel);
       } catch (error) {
         toast.error("Failed to join video call");
         console.error("Error init call", error);
       } finally {
-        setIsInitializingCall(false);
+        if (!cancelled) setIsInitializingCall(false);
       }
     };
 
-    if (session && !loadingSession) initCall();
+    initCall();
 
     // cleanup - performance reasons
     return () => {
+      cancelled = true;
+      setCall(null);
+      setChannel(null);
+      setChatClient(null);
+      setStreamClient(null);
+
       // iife
       (async () => {
         try {
@@ -77,7 +92,7 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         }
       })();
     };
-  }, [session, loadingSession, isHost, isParticipant]);
+  }, [callId, sessionStatus, loadingSession, isHost, isParticipant]);
 
   return {
     streamClient,

@@ -1,13 +1,15 @@
 import { useUser } from "@clerk/clerk-react";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router";
+import toast from "react-hot-toast";
 import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
+import { sessionApi } from "../api/sessions";
 import { PROBLEMS } from "../data/problems";
 import { executeCode } from "../lib/piston";
 import Navbar from "../components/Navbar";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { getDifficultyBadgeClass } from "../lib/utils";
-import { Loader2Icon, LogOutIcon, PhoneOffIcon } from "lucide-react";
+import { CopyIcon, Loader2Icon, LogOutIcon, PhoneOffIcon } from "lucide-react";
 import CodeEditorPanel from "../components/CodeEditorPanel";
 import OutputPanel from "../components/OutputPanel";
 
@@ -15,14 +17,26 @@ import useStreamClient from "../hooks/useStreamClient";
 import { StreamCall, StreamVideo } from "@stream-io/video-react-sdk";
 import VideoCallUI from "../components/VideoCallUI";
 
+const EDITOR_UPDATED_EVENT = "session_editor_updated";
+const EDITOR_STATE_REQUESTED_EVENT = "session_editor_state_requested";
+const OUTPUT_UPDATED_EVENT = "session_output_updated";
+
 function SessionPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get("invite") || "";
   const { user } = useUser();
   const [output, setOutput] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
+  const applyingRemoteUpdateRef = useRef(false);
+  const editorInitializedRef = useRef(false);
+  const codeBroadcastTimeoutRef = useRef(null);
+  const lastAppliedWorkspaceUpdateRef = useRef(null);
+  const lastLocalWorkspaceUpdateRef = useRef(0);
+  const attemptedJoinRef = useRef(null);
 
-  const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id);
+  const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id, inviteToken);
 
   const joinSessionMutation = useJoinSession();
   const endSessionMutation = useEndSession();
@@ -46,15 +60,46 @@ function SessionPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
 
+  const canSyncEditor = Boolean(channel && session?.status === "active" && (isHost || isParticipant));
+
+  const sendEditorUpdate = useCallback((nextLanguage, nextCode, nextOutput = null) => {
+    if (!canSyncEditor) return;
+
+    channel.sendEvent({
+      type: EDITOR_UPDATED_EVENT,
+      language: nextLanguage,
+      code: nextCode,
+      sessionOutput: nextOutput,
+    }).catch((error) => console.error("Failed to sync editor update:", error));
+  }, [canSyncEditor, channel]);
+
+  const saveWorkspaceUpdate = useCallback((nextLanguage, nextCode, nextOutput = null) => {
+    if (!id || !canSyncEditor) return;
+
+    lastLocalWorkspaceUpdateRef.current = Date.now();
+
+    sessionApi
+      .updateSessionWorkspace(id, {
+        language: nextLanguage,
+        code: nextCode,
+        output: nextOutput,
+      })
+      .catch((error) => console.error("Failed to save workspace update:", error));
+  }, [id, canSyncEditor]);
+
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
     if (!session || !user || loadingSession) return;
     if (isHost || isParticipant) return;
+    if (session.participant) return;
+    if (!inviteToken) return;
+    if (attemptedJoinRef.current === id) return;
 
-    joinSessionMutation.mutate(id, { onSuccess: refetch });
+    attemptedJoinRef.current = id;
+    joinSessionMutation.mutate({ id, inviteToken }, { onSuccess: refetch });
 
     // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
-  }, [session, user, loadingSession, isHost, isParticipant, id]);
+  }, [session, user, loadingSession, isHost, isParticipant, id, inviteToken, joinSessionMutation, refetch]);
 
   // redirect the "participant" when session ends
   useEffect(() => {
@@ -63,12 +108,114 @@ function SessionPage() {
     if (session.status === "completed") navigate("/dashboard");
   }, [session, loadingSession, navigate]);
 
-  // update code when problem loads or changes
+  // Set the starter code once when the session problem loads.
   useEffect(() => {
+    if (editorInitializedRef.current) return;
+
     if (problemData?.starterCode?.[selectedLanguage]) {
+      editorInitializedRef.current = true;
       setCode(problemData.starterCode[selectedLanguage]);
     }
   }, [problemData, selectedLanguage]);
+
+  useEffect(() => {
+    if (!isHost || !canSyncEditor || !editorInitializedRef.current) return;
+    if (session?.workspace?.code) return;
+
+    saveWorkspaceUpdate(selectedLanguage, code, output);
+  }, [isHost, canSyncEditor, session?.workspace?.code, selectedLanguage, code, output, saveWorkspaceUpdate]);
+
+  useEffect(() => {
+    const workspace = session?.workspace;
+    if (!workspace?.updatedAt) return;
+    if (workspace.updatedAt === lastAppliedWorkspaceUpdateRef.current) return;
+    if (Date.now() - lastLocalWorkspaceUpdateRef.current < 1000) return;
+    if (!workspace.code && !lastAppliedWorkspaceUpdateRef.current) return;
+
+    applyingRemoteUpdateRef.current = true;
+    lastAppliedWorkspaceUpdateRef.current = workspace.updatedAt;
+
+    if (workspace.language) setSelectedLanguage(workspace.language);
+    if (typeof workspace.code === "string") setCode(workspace.code);
+    if ("output" in workspace) setOutput(workspace.output ?? null);
+
+    setTimeout(() => {
+      applyingRemoteUpdateRef.current = false;
+    }, 0);
+  }, [session?.workspace]);
+
+  useEffect(() => {
+    if (!channel || !user?.id) return;
+
+    const handleEditorUpdate = (event) => {
+      if (event.user?.id === user.id) return;
+
+      applyingRemoteUpdateRef.current = true;
+      if (event.language) setSelectedLanguage(event.language);
+      if (typeof event.code === "string") setCode(event.code);
+      if ("sessionOutput" in event) setOutput(event.sessionOutput);
+
+      setTimeout(() => {
+        applyingRemoteUpdateRef.current = false;
+      }, 0);
+    };
+
+    const handleEditorStateRequest = (event) => {
+      if (event.user?.id === user.id || !isHost) return;
+      sendEditorUpdate(selectedLanguage, code, output);
+    };
+
+    const handleOutputUpdate = (event) => {
+      if (event.user?.id === user.id) return;
+      setOutput(event.sessionOutput ?? null);
+      setIsRunning(false);
+    };
+
+    const handleChannelEvent = (event) => {
+      if (event.type === EDITOR_UPDATED_EVENT) handleEditorUpdate(event);
+      if (event.type === EDITOR_STATE_REQUESTED_EVENT) handleEditorStateRequest(event);
+      if (event.type === OUTPUT_UPDATED_EVENT) handleOutputUpdate(event);
+    };
+
+    channel.on(handleChannelEvent);
+
+    return () => {
+      channel.off(handleChannelEvent);
+    };
+  }, [channel, user?.id, isHost, selectedLanguage, code, output, sendEditorUpdate]);
+
+  useEffect(() => {
+    if (!canSyncEditor || isHost) return;
+
+    channel
+      .sendEvent({ type: EDITOR_STATE_REQUESTED_EVENT })
+      .catch((error) => console.error("Failed to request editor state:", error));
+  }, [channel, canSyncEditor, isHost]);
+
+  useEffect(() => {
+    return () => {
+      if (codeBroadcastTimeoutRef.current) clearTimeout(codeBroadcastTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCodeChange = (value = "") => {
+    setCode(value);
+    setOutput(null);
+
+    if (!canSyncEditor || applyingRemoteUpdateRef.current) return;
+
+    if (codeBroadcastTimeoutRef.current) clearTimeout(codeBroadcastTimeoutRef.current);
+    codeBroadcastTimeoutRef.current = setTimeout(() => {
+      channel.sendEvent({
+        type: EDITOR_UPDATED_EVENT,
+        language: selectedLanguage,
+        code: value,
+        sessionOutput: null,
+      }).catch((error) => console.error("Failed to sync code change:", error));
+
+      saveWorkspaceUpdate(selectedLanguage, value, null);
+    }, 300);
+  };
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -77,6 +224,8 @@ function SessionPage() {
     const starterCode = problemData?.starterCode?.[newLang] || "";
     setCode(starterCode);
     setOutput(null);
+    sendEditorUpdate(newLang, starterCode, null);
+    saveWorkspaceUpdate(newLang, starterCode, null);
   };
 
   const handleRunCode = async () => {
@@ -86,12 +235,36 @@ function SessionPage() {
     const result = await executeCode(selectedLanguage, code);
     setOutput(result);
     setIsRunning(false);
+    saveWorkspaceUpdate(selectedLanguage, code, result);
+
+    if (channel && session?.status === "active") {
+      await channel
+        .sendEvent({
+          type: OUTPUT_UPDATED_EVENT,
+          sessionOutput: result,
+        })
+        .catch((error) => console.error("Failed to sync output:", error));
+    }
   };
 
   const handleEndSession = () => {
     if (confirm("Are you sure you want to end this session? All participants will be notified.")) {
       // this will navigate the HOST to dashboard
       endSessionMutation.mutate(id, { onSuccess: () => navigate("/dashboard") });
+    }
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!session?.inviteToken) return;
+
+    const inviteUrl = `${window.location.origin}/session/${session._id}?invite=${session.inviteToken}`;
+
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Invite link copied");
+    } catch (error) {
+      console.error("Failed to copy invite link:", error);
+      toast.error("Failed to copy invite link");
     }
   };
 
@@ -132,6 +305,15 @@ function SessionPage() {
                           {session?.difficulty.slice(0, 1).toUpperCase() +
                             session?.difficulty.slice(1) || "Easy"}
                         </span>
+                        {isHost && session?.inviteToken && (
+                          <button
+                            onClick={handleCopyInviteLink}
+                            className="btn btn-secondary btn-sm gap-2"
+                          >
+                            <CopyIcon className="w-4 h-4" />
+                            Copy Invite
+                          </button>
+                        )}
                         {isHost && session?.status === "active" && (
                           <button
                             onClick={handleEndSession}
@@ -237,7 +419,7 @@ function SessionPage() {
                       code={code}
                       isRunning={isRunning}
                       onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
+                      onCodeChange={handleCodeChange}
                       onRunCode={handleRunCode}
                     />
                   </Panel>
