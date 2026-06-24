@@ -46,7 +46,7 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* DASHBORD PAGE LINK */}
+          {/* DASHBOARD PAGE LINK */}
           <Link
             to={"/dashboard"}
             className={`px-4 py-2.5 rounded-lg transition-all duration-200 
@@ -60,7 +60,7 @@ function Navbar() {
           >
             <div className="flex items-center gap-x-2.5">
               <LayoutDashboardIcon className="size-4" />
-              <span className="font-medium hidden sm:inline">Dashbord</span>
+              <span className="font-medium hidden sm:inline">Dashboard</span>
             </div>
           </Link>
 

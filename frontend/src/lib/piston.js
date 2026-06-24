@@ -15,12 +15,19 @@ export async function executeCode(language, code) {
             body: JSON.stringify({ language, code })
         })
 
-        const data = await response.json()
+        const data = await response.json().catch(() => ({}))
+
+        if (!response.ok) {
+            return { success: false, error: data.error || `Compiler request failed (${response.status})` }
+        }
 
         if (data.error) return { success: false, error: data.error }
         return { success: true, output: data.output || "No output" }
 
-    } catch (error) {
-        return { success: false, error: `Error executing code: ${error.message}` }
+    } catch {
+        return {
+            success: false,
+            error: "Compiler service is unreachable. Make sure the backend server is running.",
+        }
     }
 }

@@ -75,7 +75,11 @@ export async function getMyRecentSessions(req, res) {
         const sessions = await Session.find({
             status: "completed",
             $or: [{ host: userId }, { participant: userId }]
-        }).sort({ createdAt: -1 }).limit(20)
+        })
+            .populate("host", "name profileImage email clerkId")
+            .populate("participant", "name profileImage email clerkId")
+            .sort({ endedAt: -1, updatedAt: -1 })
+            .limit(20)
         res.status(200).json({ sessions })
 
     } catch (error) {
@@ -163,6 +167,7 @@ export async function endSession(req, res) {
         if (session.status === "completed") return res.status(400).json({ msg: "Session is already completed" })
 
         session.status = "completed"
+        session.endedAt = new Date()
         await session.save()
 
         //delete the stream video call

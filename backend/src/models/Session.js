@@ -52,6 +52,9 @@ const SessionSchema = new mongoose.Schema({
             default: Date.now,
         },
     },
+    endedAt: {
+        type: Date,
+    },
 }, {timestamps: true}
 )
 

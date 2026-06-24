@@ -3,7 +3,7 @@ export const PROBLEMS = {
     id: "two-sum",
     title: "Two Sum",
     difficulty: "Easy",
-    category: "Array • Hash Table",
+    category: "Array - Hash Table",
     description: {
       text: "Given an array of integers nums and an integer target, return indices of the two numbers in the array such that they add up to target.",
       notes: [
@@ -27,9 +27,9 @@ export const PROBLEMS = {
       },
     ],
     constraints: [
-      "2 ≤ nums.length ≤ 10⁴",
-      "-10⁹ ≤ nums[i] ≤ 10⁹",
-      "-10⁹ ≤ target ≤ 10⁹",
+      "2 <= nums.length <= 10^4",
+      "-10^9 <= nums[i] <= 10^9",
+      "-10^9 <= target <= 10^9",
       "Only one valid answer exists",
     ],
     starterCode: {
@@ -77,7 +77,7 @@ class Solution {
     id: "reverse-string",
     title: "Reverse String",
     difficulty: "Easy",
-    category: "String • Two Pointers",
+    category: "String - Two Pointers",
     description: {
       text: "Write a function that reverses a string. The input string is given as an array of characters s.",
       notes: ["You must do this by modifying the input array in-place with O(1) extra memory."],
@@ -92,7 +92,7 @@ class Solution {
         output: '["h","a","n","n","a","H"]',
       },
     ],
-    constraints: ["1 ≤ s.length ≤ 10⁵", "s[i] is a printable ascii character"],
+    constraints: ["1 <= s.length <= 10^5", "s[i] is a printable ASCII character"],
     starterCode: {
       javascript: `function reverseString(s) {
   // Write your solution here
@@ -149,7 +149,7 @@ class Solution {
     id: "valid-palindrome",
     title: "Valid Palindrome",
     difficulty: "Easy",
-    category: "String • Two Pointers",
+    category: "String - Two Pointers",
     description: {
       text: "A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward. Alphanumeric characters include letters and numbers.",
       notes: ["Given a string s, return true if it is a palindrome, or false otherwise."],
@@ -172,7 +172,7 @@ class Solution {
           's is an empty string "" after removing non-alphanumeric characters. Since an empty string reads the same forward and backward, it is a palindrome.',
       },
     ],
-    constraints: ["1 ≤ s.length ≤ 2 * 10⁵", "s consists only of printable ASCII characters"],
+    constraints: ["1 <= s.length <= 2 * 10^5", "s consists only of printable ASCII characters"],
     starterCode: {
       javascript: `function isPalindrome(s) {
   // Write your solution here
@@ -216,7 +216,7 @@ print(isPalindrome(" "))  # Expected: True`,
     id: "maximum-subarray",
     title: "Maximum Subarray",
     difficulty: "Medium",
-    category: "Array • Dynamic Programming",
+    category: "Array - Dynamic Programming",
     description: {
       text: "Given an integer array nums, find the subarray with the largest sum, and return its sum.",
       notes: [],
@@ -238,7 +238,7 @@ print(isPalindrome(" "))  # Expected: True`,
         explanation: "The subarray [5,4,-1,7,8] has the largest sum 23.",
       },
     ],
-    constraints: ["1 ≤ nums.length ≤ 10⁵", "-10⁴ ≤ nums[i] ≤ 10⁴"],
+    constraints: ["1 <= nums.length <= 10^5", "-10^4 <= nums[i] <= 10^4"],
     starterCode: {
       javascript: `function maxSubArray(nums) {
   // Write your solution here
@@ -282,7 +282,7 @@ print(maxSubArray([5,4,-1,7,8]))  # Expected: 23`,
     id: "container-with-most-water",
     title: "Container With Most Water",
     difficulty: "Medium",
-    category: "Array • Two Pointers",
+    category: "Array - Two Pointers",
     description: {
       text: "You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]).",
       notes: [
@@ -303,7 +303,7 @@ print(maxSubArray([5,4,-1,7,8]))  # Expected: 23`,
         output: "1",
       },
     ],
-    constraints: ["n == height.length", "2 ≤ n ≤ 10⁵", "0 ≤ height[i] ≤ 10⁴"],
+    constraints: ["n == height.length", "2 <= n <= 10^5", "0 <= height[i] <= 10^4"],
     starterCode: {
       javascript: `function maxArea(height) {
   // Write your solution here

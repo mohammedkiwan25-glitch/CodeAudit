@@ -34,9 +34,14 @@ function SessionPage() {
   const codeBroadcastTimeoutRef = useRef(null);
   const lastAppliedWorkspaceUpdateRef = useRef(null);
   const lastLocalWorkspaceUpdateRef = useRef(0);
-  const attemptedJoinRef = useRef(null);
 
-  const { data: sessionData, isLoading: loadingSession, refetch } = useSessionById(id, inviteToken);
+  const {
+    data: sessionData,
+    isLoading: loadingSession,
+    isError: sessionError,
+    error: sessionLoadError,
+    refetch,
+  } = useSessionById(id, inviteToken);
 
   const joinSessionMutation = useJoinSession();
   const endSessionMutation = useEndSession();
@@ -44,6 +49,8 @@ function SessionPage() {
   const session = sessionData?.session;
   const isHost = session?.host?.clerkId === user?.id;
   const isParticipant = session?.participant?.clerkId === user?.id;
+
+  const shouldConnectToCall = isHost || isParticipant;
 
   const { call, channel, chatClient, isInitializingCall, streamClient } = useStreamClient(
     session,
@@ -87,26 +94,12 @@ function SessionPage() {
       .catch((error) => console.error("Failed to save workspace update:", error));
   }, [id, canSyncEditor]);
 
-  // auto-join session if user is not already a participant and not the host
-  useEffect(() => {
-    if (!session || !user || loadingSession) return;
-    if (isHost || isParticipant) return;
-    if (session.participant) return;
-    if (!inviteToken) return;
-    if (attemptedJoinRef.current === id) return;
-
-    attemptedJoinRef.current = id;
-    joinSessionMutation.mutate({ id, inviteToken }, { onSuccess: refetch });
-
-    // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
-  }, [session, user, loadingSession, isHost, isParticipant, id, inviteToken, joinSessionMutation, refetch]);
-
   // redirect the "participant" when session ends
   useEffect(() => {
     if (!session || loadingSession) return;
 
-    if (session.status === "completed") navigate("/dashboard");
-  }, [session, loadingSession, navigate]);
+    if (session.status === "completed") navigate(`/session/${id}/review`);
+  }, [session, loadingSession, navigate, id]);
 
   // Set the starter code once when the session problem loads.
   useEffect(() => {
@@ -250,8 +243,12 @@ function SessionPage() {
   const handleEndSession = () => {
     if (confirm("Are you sure you want to end this session? All participants will be notified.")) {
       // this will navigate the HOST to dashboard
-      endSessionMutation.mutate(id, { onSuccess: () => navigate("/dashboard") });
+      endSessionMutation.mutate(id, { onSuccess: () => navigate(`/session/${id}/review`) });
     }
+  };
+
+  const handleJoinSession = () => {
+    joinSessionMutation.mutate({ id, inviteToken }, { onSuccess: refetch });
   };
 
   const handleCopyInviteLink = async () => {
@@ -267,6 +264,124 @@ function SessionPage() {
       toast.error("Failed to copy invite link");
     }
   };
+
+  if (loadingSession) {
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2Icon className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
+            <p className="text-lg font-semibold">Loading interview...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    const status = sessionLoadError?.response?.status;
+    const message =
+      status === 403
+        ? "This interview requires a valid invite link."
+        : status === 404
+          ? "This interview does not exist."
+          : "Unable to load this interview. Check that the backend is running.";
+
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="card bg-base-100 shadow-xl max-w-md w-full">
+            <div className="card-body text-center">
+              <h1 className="card-title justify-center text-2xl">Interview Unavailable</h1>
+              <p className="text-base-content/70">{message}</p>
+              <button className="btn btn-primary mt-4" onClick={() => navigate("/dashboard")}>
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  if (session.status === "completed") {
+    navigate(`/session/${id}/review`);
+    return null;
+  }
+
+  if (!shouldConnectToCall) {
+    const isFull = Boolean(session.participant);
+
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="card bg-base-100 shadow-xl max-w-lg w-full">
+            <div className="card-body">
+              <div className="text-center mb-4">
+                <p className="text-sm uppercase tracking-wide text-primary font-bold">Interview Invite</p>
+                <h1 className="text-3xl font-black mt-2">Join CodeAudit Session</h1>
+                <p className="text-base-content/70 mt-2">
+                  {session.host?.name || "The host"} invited you to a coding interview.
+                </p>
+              </div>
+
+              <div className="bg-base-200 rounded-xl p-4 space-y-3">
+                <div className="flex justify-between gap-4">
+                  <span className="text-base-content/60">Problem</span>
+                  <span className="font-semibold text-right">{session.problem}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-base-content/60">Difficulty</span>
+                  <span className={`badge ${getDifficultyBadgeClass(session.difficulty)}`}>
+                    {session.difficulty}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-base-content/60">Host</span>
+                  <span className="font-semibold text-right">{session.host?.name || "Unknown"}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-base-content/60">Participants</span>
+                  <span className="font-semibold">{session.participant ? "2/2" : "1/2"}</span>
+                </div>
+              </div>
+
+              {isFull ? (
+                <div className="alert alert-error mt-4">
+                  <span>This interview is already full.</span>
+                </div>
+              ) : !inviteToken ? (
+                <div className="alert alert-warning mt-4">
+                  <span>A valid invite link is required to join.</span>
+                </div>
+              ) : null}
+
+              <div className="card-actions justify-end mt-6">
+                <button className="btn btn-ghost" onClick={() => navigate("/dashboard")}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleJoinSession}
+                  disabled={isFull || !inviteToken || joinSessionMutation.isPending}
+                >
+                  {joinSessionMutation.isPending ? (
+                    <Loader2Icon className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  Join Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-base-100 flex flex-col">
@@ -291,7 +406,7 @@ function SessionPage() {
                           <p className="text-base-content/60 mt-1">{problemData.category}</p>
                         )}
                         <p className="text-base-content/60 mt-2">
-                          Host: {session?.host?.name || "Loading..."} •{" "}
+                          Host: {session?.host?.name || "Loading..."} -{" "}
                           {session?.participant ? 2 : 1}/2 participants
                         </p>
                       </div>
@@ -398,7 +513,7 @@ function SessionPage() {
                         <ul className="space-y-2 text-base-content/90">
                           {problemData.constraints.map((constraint, idx) => (
                             <li key={idx} className="flex gap-2">
-                              <span className="text-primary">•</span>
+                              <span className="text-primary">-</span>
                               <code className="text-sm">{constraint}</code>
                             </li>
                           ))}
