@@ -36,7 +36,8 @@ export const useSessionById = (id, inviteToken) => {
         queryKey: ["session", id, inviteToken],
         queryFn: () => sessionApi.getSessionById(id, inviteToken),
         enabled: !!id,
-        refetchInterval: 1000, // refetch every second to sync session status and workspace changes
+        retry: false,
+        refetchInterval: (query) => (query.state.error ? false : 1000), // keep syncing only while the session loads successfully
     });
 
     return result;

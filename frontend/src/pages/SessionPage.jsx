@@ -254,7 +254,8 @@ function SessionPage() {
   const handleCopyInviteLink = async () => {
     if (!session?.inviteToken) return;
 
-    const inviteUrl = `${window.location.origin}/session/${session._id}?invite=${session.inviteToken}`;
+    const appUrl = (import.meta.env.VITE_CLIENT_URL || window.location.origin).replace(/\/$/, "");
+    const inviteUrl = `${appUrl}/session/${session._id}?invite=${session.inviteToken}`;
 
     try {
       await navigator.clipboard.writeText(inviteUrl);
@@ -285,7 +286,7 @@ function SessionPage() {
       status === 403
         ? "This interview requires a valid invite link."
         : status === 404
-          ? "This interview does not exist."
+          ? "This interview does not exist on this server. Check that the invite link points to the same app where it was created."
           : "Unable to load this interview. Check that the backend is running.";
 
     return (
