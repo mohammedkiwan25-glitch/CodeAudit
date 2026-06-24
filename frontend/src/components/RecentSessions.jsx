@@ -1,31 +1,42 @@
 import { Code2, Clock, Users, Trophy, Loader } from "lucide-react";
 import { getDifficultyBadgeClass } from "../lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { Link } from "react-router";
 
-function RecentSessions({ sessions, isLoading }) {
+function RecentSessions({
+  sessions,
+  isLoading,
+  title = "Past Interviews",
+  emptyText = "Completed interviews will appear here.",
+  compact = false,
+  className = "",
+}) {
+  const gridClass = compact ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+
   return (
-    <div className="card bg-base-100 border-2 border-accent/20 hover:border-accent/30 mt-8">
-      <div className="card-body">
+    <div className={`bg-transparent ${className}`}>
+  <div className="">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-gradient-to-br from-accent to-secondary rounded-xl">
             <Clock className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-2xl font-black">Your Past Sessions</h2>
+          <h2 className="text-2xl font-black">{title}</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={`grid ${gridClass} gap-4`}>
           {isLoading ? (
             <div className="col-span-full flex items-center justify-center py-20">
               <Loader className="w-10 h-10 animate-spin text-primary" />
             </div>
           ) : sessions.length > 0 ? (
             sessions.map((session) => (
-              <div
+              <Link
+                to={`/session/${session._id}/review`}
                 key={session._id}
                 className={`card relative ${
                   session.status === "active"
                     ? "bg-success/10 border-success/30 hover:border-success/60"
-                    : "bg-base-200 border-base-300 hover:border-primary/30"
+                    : "bg-base-100 border-base-200 hover:border-primary/30"
                 }`}
               >
                 {session.status === "active" && (
@@ -83,7 +94,7 @@ function RecentSessions({ sessions, isLoading }) {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <div className="col-span-full text-center py-16">
@@ -91,7 +102,7 @@ function RecentSessions({ sessions, isLoading }) {
                 <Trophy className="w-10 h-10 text-accent/50" />
               </div>
               <p className="text-lg font-semibold opacity-70 mb-1">No sessions yet</p>
-              <p className="text-sm opacity-50">Start your coding journey today!</p>
+              <p className="text-sm opacity-50">{emptyText}</p>
             </div>
           )}
         </div>
