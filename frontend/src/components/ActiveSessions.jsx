@@ -20,25 +20,25 @@ function ActiveSessions({
 }) {
   return (
     <div className="lg:col-span-2 card bg-base-100 border-2 border-primary/20 hover:border-primary/30">
-      <div className="card-body p-5">
+      <div className="card-body p-4 sm:p-5">
         {/* HEADERS SECTION */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           {/* TITLE AND ICON */}
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-primary to-secondary rounded-lg">
               <ZapIcon className="size-4" />
             </div>
-            <h2 className="text-xl font-black">{title}</h2>
+            <h2 className="text-lg sm:text-xl font-black leading-tight">{title}</h2>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
             <div className="size-2 bg-success rounded-full" />
             <span className="text-sm font-medium text-success">{sessions.length} active</span>
           </div>
         </div>
 
         {/* SESSIONS LIST */}
-        <div className="space-y-2 max-h-[260px] overflow-y-auto pr-2">
+        <div className="space-y-2 max-h-[320px] sm:max-h-[260px] overflow-y-auto sm:pr-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-10">
               <LoaderIcon className="size-8 animate-spin text-primary" />
@@ -49,7 +49,7 @@ function ActiveSessions({
                 key={session._id}
                 className="card bg-base-200 border-2 border-base-300 hover:border-primary/50"
               >
-                <div className="flex items-center justify-between gap-3 p-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3">
                   {/* LEFT SIDE */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="relative size-11 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
@@ -58,7 +58,7 @@ function ActiveSessions({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-bold text-base truncate">{session.problem}</h3>
                         <span
                           className={`badge badge-sm ${getDifficultyBadgeClass(
@@ -70,7 +70,7 @@ function ActiveSessions({
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 text-xs opacity-80">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs opacity-80">
                         <div className="flex items-center gap-1.5">
                           <CrownIcon className="size-3.5" />
                           <span className="font-medium">{session.host?.name}</span>
@@ -89,9 +89,9 @@ function ActiveSessions({
                   </div>
 
                   {session.participant && !isUserInSession(session) ? (
-                    <button className="btn btn-disabled btn-sm">Full</button>
+                    <button className="btn btn-disabled btn-sm w-full sm:w-auto">Full</button>
                   ) : (
-                    <Link to={`/session/${session._id}`} className="btn btn-primary btn-xs sm:btn-sm gap-2">
+                    <Link to={`/session/${session._id}`} className="btn btn-primary btn-sm gap-2 w-full sm:w-auto">
                       {isUserInSession(session) ? "Rejoin" : "Join"}
                       <ArrowRightIcon className="size-4" />
                     </Link>

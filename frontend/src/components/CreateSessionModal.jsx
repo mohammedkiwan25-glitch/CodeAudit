@@ -27,14 +27,14 @@ function CreateSessionModal({
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-2xl">
-        <h3 className="font-bold text-2xl mb-6">Create New Session</h3>
+      <div className="modal-box w-[calc(100vw-1rem)] max-w-2xl max-h-[92vh] p-4 sm:p-6 overflow-y-auto">
+        <h3 className="font-bold text-xl sm:text-2xl mb-5 sm:mb-6">Create New Session</h3>
 
-        <div className="space-y-8">
+        <div className="space-y-5 sm:space-y-8">
           <div className="tabs tabs-boxed">
             <button
               type="button"
-              className={`tab flex-1 ${!isCustomProblem ? "tab-active" : ""}`}
+              className={`tab flex-1 text-xs sm:text-sm ${!isCustomProblem ? "tab-active" : ""}`}
               onClick={() =>
                 setRoomConfig({
                   problemSource: "built-in",
@@ -49,7 +49,7 @@ function CreateSessionModal({
             </button>
             <button
               type="button"
-              className={`tab flex-1 ${isCustomProblem ? "tab-active" : ""}`}
+              className={`tab flex-1 text-xs sm:text-sm ${isCustomProblem ? "tab-active" : ""}`}
               onClick={() =>
                 setRoomConfig({
                   ...roomConfig,
@@ -180,11 +180,11 @@ function CreateSessionModal({
 
           {/* ROOM SUMMARY */}
           {roomConfig.problem && (
-            <div className="alert alert-success">
-              <Code2Icon className="size-5" />
-              <div>
+            <div className="alert alert-success items-start">
+              <Code2Icon className="size-5 shrink-0" />
+              <div className="min-w-0">
                 <p className="font-semibold">Room Summary:</p>
-                <p>
+                <p className="break-words">
                   Problem: <span className="font-medium">{roomConfig.problem}</span>
                 </p>
                 <p>
@@ -201,13 +201,13 @@ function CreateSessionModal({
           )}
         </div>
 
-        <div className="modal-action">
-          <button className="btn btn-ghost" onClick={onClose}>
+        <div className="modal-action flex-col-reverse sm:flex-row gap-2">
+          <button className="btn btn-ghost w-full sm:w-auto" onClick={onClose}>
             Cancel
           </button>
 
           <button
-            className="btn btn-primary gap-2"
+            className="btn btn-primary gap-2 w-full sm:w-auto"
             onClick={onCreateRoom}
             disabled={
               isCreating ||

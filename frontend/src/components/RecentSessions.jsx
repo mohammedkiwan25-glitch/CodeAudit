@@ -16,11 +16,11 @@ function RecentSessions({
   return (
     <div className={`bg-transparent ${className}`}>
   <div className="">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
           <div className="p-2 bg-gradient-to-br from-accent to-secondary rounded-xl">
             <Clock className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-2xl font-black">{title}</h2>
+          <h2 className="text-xl sm:text-2xl font-black leading-tight">{title}</h2>
         </div>
 
         <div className={`grid ${gridClass} gap-4`}>
@@ -48,16 +48,16 @@ function RecentSessions({
                   </div>
                 )}
 
-                <div className="card-body p-5">
+                <div className="card-body p-4 sm:p-5">
                   <div className="flex items-start gap-3 mb-4">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 ${
                         session.status === "active"
                           ? "bg-gradient-to-br from-success to-success/70"
                           : "bg-gradient-to-br from-primary to-secondary"
                       }`}
                     >
-                      <Code2 className="w-6 h-6 text-white" />
+                      <Code2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-base mb-1 truncate">{session.problem}</h3>
@@ -98,8 +98,8 @@ function RecentSessions({
             ))
           ) : (
             <div className="col-span-full text-center py-16">
-              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-accent/20 to-secondary/20 rounded-3xl flex items-center justify-center">
-                <Trophy className="w-10 h-10 text-accent/50" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 bg-gradient-to-br from-accent/20 to-secondary/20 rounded-3xl flex items-center justify-center">
+                <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-accent/50" />
               </div>
               <p className="text-lg font-semibold opacity-70 mb-1">No sessions yet</p>
               <p className="text-sm opacity-50">{emptyText}</p>

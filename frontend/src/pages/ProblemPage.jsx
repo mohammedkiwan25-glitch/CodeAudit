@@ -320,7 +320,7 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
     }
 
     return (
-        <div className='h-screen w-screen bg-base-100 flex flex-col'>
+        <div className='h-screen w-screen bg-base-100 flex flex-col overflow-hidden'>
             <Navbar />
 
             {/* DESKTOP layout - panels */}
@@ -368,7 +368,7 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
                         allProblems={Object.values(PROBLEMS)}
                     />
                 </div>
-                <div className='min-h-[400px]'>
+                <div className='h-[520px] shrink-0'>
                     <CodeEditorPanel
                         selectedLanguage={selectedLanguage}
                         code={code}
@@ -378,7 +378,7 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
                         onRunCode={handleRunCodeWithTests}
                     />
                 </div>
-                <div className='min-h-[200px]'>
+                <div className='h-[260px] shrink-0'>
                     <OutputPanel output={output} />
                 </div>
             </div>

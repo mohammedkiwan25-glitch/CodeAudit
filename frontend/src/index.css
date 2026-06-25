@@ -2,3 +2,16 @@
 @plugin "daisyui" {
     themes: all;
 }
+
+.codeaudit-video-call .str-video__speaker-layout,
+.codeaudit-video-call .str-video__speaker-layout__wrapper,
+.codeaudit-video-call .str-video__participant-view,
+.codeaudit-video-call .str-video__video,
+.codeaudit-video-call video {
+    width: 100%;
+    height: 100%;
+}
+
+.codeaudit-video-call video {
+    object-fit: cover;
+}

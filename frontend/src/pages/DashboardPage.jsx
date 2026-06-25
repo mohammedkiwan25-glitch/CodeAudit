@@ -124,19 +124,19 @@ function DashboardPage() {
         <WelcomeSection onCreateSession={() => setShowCreateModal(true)} />
 
         {/* Grid layout */}
-        <div className="container mx-auto px-6 pb-16">
+        <div className="container mx-auto px-4 sm:px-6 pb-10 sm:pb-16">
           {(activeSessionsError || recentSessionsError) && (
             <div className="alert alert-error mb-6">
               <span>Unable to load interviews. Make sure the backend server is running.</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
             <StatsCards
               activeSessionsCount={activeSessions.length}
               recentSessionsCount={recentSessions.length}
             />
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               <ActiveSessions
                 title="Created By Me"
                 sessions={createdActiveSessions}
@@ -156,7 +156,7 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 sm:mt-8">
             <RecentSessions
               title="Past Interviews Created By Me"
               sessions={createdRecentSessions}
