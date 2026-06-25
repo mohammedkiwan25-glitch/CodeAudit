@@ -10,6 +10,10 @@ const SessionSchema = new mongoose.Schema({
         enum: ['easy', 'medium', 'hard'],
         required: true
     },
+    problemDetails: {
+        type: mongoose.Schema.Types.Mixed,
+        default: null,
+    },
     host: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

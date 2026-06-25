@@ -59,10 +59,10 @@ function SessionPage() {
     isParticipant
   );
 
-  // find the problem data based on session problem title
-  const problemData = session?.problem
+  const fallbackProblemData = session?.problem
     ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
     : null;
+  const problemData = session?.problemDetails || fallbackProblemData;
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
@@ -486,12 +486,14 @@ function SessionPage() {
                                   </span>
                                   <span>{example.input}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                  <span className="text-secondary font-bold min-w-[70px]">
-                                    Output:
-                                  </span>
-                                  <span>{example.output}</span>
-                                </div>
+                                {example.output ? (
+                                  <div className="flex gap-2">
+                                    <span className="text-secondary font-bold min-w-[70px]">
+                                      Output:
+                                    </span>
+                                    <span>{example.output}</span>
+                                  </div>
+                                ) : null}
                                 {example.explanation && (
                                   <div className="pt-2 border-t border-base-300 mt-2">
                                     <span className="text-base-content/60 font-sans text-xs">

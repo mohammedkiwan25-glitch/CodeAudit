@@ -10,11 +10,38 @@ import ActiveSessions from "../components/ActiveSessions";
 import RecentSessions from "../components/RecentSessions";
 import CreateSessionModal from "../components/CreateSessionModal";
 
+const DEFAULT_CUSTOM_STARTER_CODE = {
+  javascript: `function solution() {
+  // Write your solution here
+  
+}`,
+  python: `def solution():
+    # Write your solution here
+    pass`,
+  java: `class Solution {
+    public static void main(String[] args) {
+        // Write your solution here
+    }
+}`,
+};
+
 function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [roomConfig, setRoomConfig] = useState({ problem: "", difficulty: "" });
+  const [roomConfig, setRoomConfig] = useState({
+    problemSource: "built-in",
+    problem: "",
+    difficulty: "",
+    problemDetails: null,
+    customProblem: {
+      title: "",
+      difficulty: "Medium",
+      description: "",
+      example: "",
+      constraints: "",
+    },
+  });
 
   const createSessionMutation = useCreateSession();
 
@@ -30,12 +57,43 @@ function DashboardPage() {
   } = useMyRecentSessions();
 
   const handleCreateRoom = () => {
-    if (!roomConfig.problem || !roomConfig.difficulty) return;
+    const isCustomProblem = roomConfig.problemSource === "custom";
+    const customProblem = roomConfig.customProblem || {};
+    const problemTitle = isCustomProblem ? customProblem.title?.trim() : roomConfig.problem?.trim();
+
+    if (!problemTitle || !roomConfig.difficulty) return;
+    if (isCustomProblem && !customProblem.description?.trim()) return;
+
+    const problemDetails = isCustomProblem
+      ? {
+          id: `custom-${Date.now()}`,
+          source: "custom",
+          title: problemTitle,
+          difficulty: customProblem.difficulty,
+          category: "Custom Interview Problem",
+          description: {
+            text: customProblem.description.trim(),
+            notes: [],
+          },
+          examples: customProblem.example.trim()
+            ? [{ input: customProblem.example.trim(), output: "" }]
+            : [],
+          constraints: customProblem.constraints
+            .split("\n")
+            .map((constraint) => constraint.trim())
+            .filter(Boolean),
+          starterCode: DEFAULT_CUSTOM_STARTER_CODE,
+        }
+      : {
+          ...roomConfig.problemDetails,
+          source: "built-in",
+        };
 
     createSessionMutation.mutate(
       {
-        problem: roomConfig.problem,
+        problem: problemTitle,
         difficulty: roomConfig.difficulty.toLowerCase(),
+        problemDetails,
       },
       {
         onSuccess: (data) => {
