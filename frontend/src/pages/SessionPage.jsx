@@ -387,99 +387,25 @@ function SessionPage() {
     <div className="h-screen bg-base-100 flex flex-col overflow-hidden">
       <Navbar />
 
-      <div className="flex-1 hidden md:grid grid-cols-[minmax(0,1.25fr)_minmax(380px,1fr)] gap-4 p-4 bg-base-200 overflow-hidden">
-        <section className="min-w-0 min-h-0 flex flex-col gap-4">
-          <div className="bg-base-100 border border-base-300 rounded-xl px-5 py-4 flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold leading-tight truncate">
-                {session?.problem || "Loading..."}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-base-content/60">
-                {problemData?.category && <span>{problemData.category}</span>}
-                <span>Host: {session?.host?.name || "Loading..."}</span>
-                <span>{session?.participant ? 2 : 1}/2 participants</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={`badge badge-lg ${getDifficultyBadgeClass(session?.difficulty)}`}>
+      <div className="flex-1 hidden md:grid grid-cols-[300px_minmax(0,1fr)_minmax(440px,0.95fr)] xl:grid-cols-[340px_minmax(0,1fr)_minmax(480px,0.9fr)] gap-4 p-4 bg-base-200 overflow-hidden">
+        <aside className="min-w-0 min-h-0 overflow-y-auto rounded-xl border border-base-300 bg-base-100">
+          <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 p-4">
+            <p className="text-xs uppercase tracking-wide text-primary font-bold">Interview Problem</p>
+            <h2 className="text-2xl font-black leading-tight mt-1 break-words">
+              {session?.problem || "Loading..."}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2 mt-3">
+              <span className={`badge ${getDifficultyBadgeClass(session?.difficulty)}`}>
                 {session?.difficulty.slice(0, 1).toUpperCase() + session?.difficulty.slice(1) || "Easy"}
               </span>
-              {isHost && session?.inviteToken && (
-                <button onClick={handleCopyInviteLink} className="btn btn-secondary btn-sm gap-2">
-                  <CopyIcon className="w-4 h-4" />
-                  Copy Invite
-                </button>
-              )}
-              {isHost && session?.status === "active" && (
-                <button
-                  onClick={handleEndSession}
-                  disabled={endSessionMutation.isPending}
-                  className="btn btn-error btn-sm gap-2"
-                >
-                  {endSessionMutation.isPending ? (
-                    <Loader2Icon className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <LogOutIcon className="w-4 h-4" />
-                  )}
-                  End Session
-                </button>
-              )}
+              {problemData?.category && <span className="badge badge-ghost">{problemData.category}</span>}
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 grid grid-rows-[minmax(0,1fr)_240px] xl:grid-rows-[minmax(0,1fr)_260px] gap-4">
-            <div className="min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-300">
-              <CodeEditorPanel
-                selectedLanguage={selectedLanguage}
-                code={code}
-                isRunning={isRunning}
-                onLanguageChange={handleLanguageChange}
-                onCodeChange={handleCodeChange}
-                onRunCode={handleRunCode}
-              />
-            </div>
-
-            <div className="min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-100">
-              <OutputPanel output={output} />
-            </div>
-          </div>
-        </section>
-
-        <aside className="min-w-0 min-h-0 grid grid-rows-[minmax(420px,1.35fr)_minmax(220px,0.65fr)] gap-4">
-          <div className="min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-100">
-            {isInitializingCall ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Loader2Icon className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
-                  <p className="text-lg">Connecting to video call...</p>
-                </div>
-              </div>
-            ) : !streamClient || !call ? (
-              <div className="h-full flex items-center justify-center p-6">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                    <PhoneOffIcon className="w-10 h-10 text-error" />
-                  </div>
-                  <h2 className="text-2xl font-bold">Connection Failed</h2>
-                  <p className="text-base-content/70">Unable to connect to the video call</p>
-                </div>
-              </div>
-            ) : (
-              <div className="h-full">
-                <StreamVideo client={streamClient}>
-                  <StreamCall call={call}>
-                    <VideoCallUI chatClient={chatClient} channel={channel} />
-                  </StreamCall>
-                </StreamVideo>
-              </div>
-            )}
-          </div>
-
-          <div className="min-h-0 overflow-y-auto rounded-xl border border-base-300 bg-base-100 p-4 space-y-4">
+          <div className="p-4 space-y-5">
             {problemData?.description && (
               <section>
-                <h2 className="text-lg font-bold mb-3 text-base-content">Problem</h2>
+                <h3 className="text-lg font-bold mb-3 text-base-content">Description</h3>
                 <div className="space-y-3 text-sm leading-relaxed text-base-content/90">
                   <p>{problemData.description.text}</p>
                   {problemData.description.notes?.map((note, idx) => (
@@ -491,7 +417,7 @@ function SessionPage() {
 
             {problemData?.examples && problemData.examples.length > 0 && (
               <section>
-                <h2 className="text-lg font-bold mb-3 text-base-content">Examples</h2>
+                <h3 className="text-lg font-bold mb-3 text-base-content">Examples</h3>
                 <div className="space-y-3">
                   {problemData.examples.map((example, idx) => (
                     <div key={idx}>
@@ -524,7 +450,7 @@ function SessionPage() {
 
             {problemData?.constraints && problemData.constraints.length > 0 && (
               <section>
-                <h2 className="text-lg font-bold mb-3 text-base-content">Constraints</h2>
+                <h3 className="text-lg font-bold mb-3 text-base-content">Constraints</h3>
                 <ul className="space-y-2 text-sm text-base-content/90">
                   {problemData.constraints.map((constraint, idx) => (
                     <li key={idx} className="flex gap-2">
@@ -536,6 +462,87 @@ function SessionPage() {
               </section>
             )}
           </div>
+        </aside>
+
+        <section className="min-w-0 min-h-0 flex flex-col gap-4">
+          <div className="bg-base-100 border border-base-300 rounded-xl px-5 py-3 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-wide text-primary font-bold">Live Workspace</p>
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-base-content/60">
+                <span>Host: {session?.host?.name || "Loading..."}</span>
+                <span>{session?.participant ? 2 : 1}/2 participants</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isHost && session?.inviteToken && (
+                <button onClick={handleCopyInviteLink} className="btn btn-secondary btn-sm gap-2">
+                  <CopyIcon className="w-4 h-4" />
+                  Copy Invite
+                </button>
+              )}
+              {isHost && session?.status === "active" && (
+                <button
+                  onClick={handleEndSession}
+                  disabled={endSessionMutation.isPending}
+                  className="btn btn-error btn-sm gap-2"
+                >
+                  {endSessionMutation.isPending ? (
+                    <Loader2Icon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LogOutIcon className="w-4 h-4" />
+                  )}
+                  End Session
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 grid grid-rows-[minmax(0,1fr)_220px] xl:grid-rows-[minmax(0,1fr)_240px] gap-4">
+            <div className="min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-300">
+              <CodeEditorPanel
+                selectedLanguage={selectedLanguage}
+                code={code}
+                isRunning={isRunning}
+                onLanguageChange={handleLanguageChange}
+                onCodeChange={handleCodeChange}
+                onRunCode={handleRunCode}
+              />
+            </div>
+
+            <div className="min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-100">
+              <OutputPanel output={output} />
+            </div>
+          </div>
+        </section>
+
+        <aside className="min-w-0 min-h-0 overflow-hidden rounded-xl border border-base-300 bg-base-100">
+          {isInitializingCall ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <Loader2Icon className="w-12 h-12 mx-auto animate-spin text-primary mb-4" />
+                <p className="text-lg">Connecting to video call...</p>
+              </div>
+            </div>
+          ) : !streamClient || !call ? (
+            <div className="h-full flex items-center justify-center p-6">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-error/10 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <PhoneOffIcon className="w-10 h-10 text-error" />
+                </div>
+                <h2 className="text-2xl font-bold">Connection Failed</h2>
+                <p className="text-base-content/70">Unable to connect to the video call</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full">
+              <StreamVideo client={streamClient}>
+                <StreamCall call={call}>
+                  <VideoCallUI chatClient={chatClient} channel={channel} />
+                </StreamCall>
+              </StreamVideo>
+            </div>
+          )}
         </aside>
       </div>
 
