@@ -57,11 +57,13 @@ function SessionReviewPage() {
     <div className="min-h-screen bg-base-200">
       <Navbar />
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm uppercase tracking-wide text-primary font-bold">Session Review</p>
-            <h1 className="text-4xl font-black mt-2">{session.problem}</h1>
+            <h1 className="text-3xl sm:text-4xl font-black mt-2 leading-tight break-words">
+              {session.problem}
+            </h1>
             <div className="flex flex-wrap items-center gap-3 mt-3">
               <span className={`badge badge-lg ${getDifficultyBadgeClass(session.difficulty)}`}>
                 {session.difficulty}
@@ -71,14 +73,14 @@ function SessionReviewPage() {
             </div>
           </div>
 
-          <button className="btn btn-primary" onClick={() => navigate("/dashboard")}>
+          <button className="btn btn-primary w-full sm:w-auto" onClick={() => navigate("/dashboard")}>
             Back to Dashboard
           </button>
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="card bg-base-100">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <UsersIcon className="w-6 h-6 text-primary" />
               <p className="text-sm text-base-content/60">Participants</p>
               <p className="font-bold">
@@ -88,14 +90,14 @@ function SessionReviewPage() {
             </div>
           </div>
           <div className="card bg-base-100">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <ClockIcon className="w-6 h-6 text-primary" />
               <p className="text-sm text-base-content/60">Duration</p>
               <p className="font-bold">{durationMinutes ? `${durationMinutes} min` : "Not available"}</p>
             </div>
           </div>
           <div className="card bg-base-100">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <Code2Icon className="w-6 h-6 text-primary" />
               <p className="text-sm text-base-content/60">Completed On</p>
               <p className="font-bold">{endedAt ? endedAt.toLocaleString() : "Not available"}</p>
@@ -105,18 +107,18 @@ function SessionReviewPage() {
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card bg-base-100">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <h2 className="card-title">Final Code</h2>
-              <pre className="bg-base-300 rounded-lg p-4 overflow-auto text-sm min-h-[360px] whitespace-pre-wrap">
+              <pre className="bg-base-300 rounded-lg p-3 sm:p-4 overflow-auto text-xs sm:text-sm min-h-[260px] sm:min-h-[360px] whitespace-pre-wrap">
                 {workspace?.code || "No code was saved for this session."}
               </pre>
             </div>
           </div>
 
           <div className="card bg-base-100">
-            <div className="card-body">
+            <div className="card-body p-4 sm:p-6">
               <h2 className="card-title">Final Output</h2>
-              <div className="h-[420px] border border-base-300 rounded-lg overflow-hidden">
+              <div className="h-[300px] sm:h-[420px] border border-base-300 rounded-lg overflow-hidden">
                 <OutputPanel output={workspace?.output || null} />
               </div>
             </div>

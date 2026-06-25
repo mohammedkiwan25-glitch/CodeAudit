@@ -32,10 +32,10 @@ function VideoCallUI({ chatClient, channel }) {
   }
 
   return (
-    <div className="h-full flex gap-3 relative str-video">
-      <div className="flex-1 flex flex-col gap-3">
+    <div className="h-full min-h-0 flex gap-3 relative str-video codeaudit-video-call">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-3">
         {/* Participants count badge and Chat Toggle */}
-        <div className="flex items-center justify-between gap-2 bg-base-100 p-3 rounded-lg shadow">
+        <div className="flex items-center justify-between gap-2 bg-base-100 p-2.5 rounded-lg shadow shrink-0">
           <div className="flex items-center gap-2">
             <UsersIcon className="w-5 h-5 text-primary" />
             <span className="font-semibold">
@@ -55,11 +55,11 @@ function VideoCallUI({ chatClient, channel }) {
           )}
         </div>
 
-        <div className="flex-1 bg-base-300 rounded-lg overflow-hidden relative">
+        <div className="flex-1 min-h-0 rounded-lg overflow-hidden bg-base-300">
           <SpeakerLayout />
         </div>
 
-        <div className="bg-base-100 p-3 rounded-lg shadow flex justify-center">
+        <div className="bg-base-100 px-3 py-2 rounded-lg shadow flex justify-center shrink-0">
           <CallControls onLeave={() => navigate("/dashboard")} />
         </div>
       </div>
