@@ -5,13 +5,33 @@ import Session from "../models/Session.js"
 
 export async function createSession(req, res) {
     try {
-        const { problem, difficulty } = req.body
+        const { problem, difficulty, problemDetails } = req.body
         const userId = req.user._id
         const clerkId = req.user.clerkId
 
         if (!problem || !difficulty) {
             return res.status(400).json({ msg: "Problem and difficulty are required" })
         }
+
+        const normalizedDifficulty = difficulty.toLowerCase()
+        if (!["easy", "medium", "hard"].includes(normalizedDifficulty)) {
+            return res.status(400).json({ msg: "Unsupported difficulty" })
+        }
+
+        const sessionProblemDetails = problemDetails
+            ? {
+                ...problemDetails,
+                title: problemDetails.title || problem,
+                difficulty: normalizedDifficulty,
+            }
+            : {
+                title: problem,
+                difficulty: normalizedDifficulty,
+                description: { text: "", notes: [] },
+                examples: [],
+                constraints: [],
+                starterCode: {},
+            }
 
         //generate a unique callId for the video call
 
@@ -20,14 +40,21 @@ export async function createSession(req, res) {
 
         //create session in db 
 
-        const session = await Session.create({ problem, difficulty, host: userId, callId, inviteToken })
+        const session = await Session.create({
+            problem,
+            difficulty: normalizedDifficulty,
+            problemDetails: sessionProblemDetails,
+            host: userId,
+            callId,
+            inviteToken,
+        })
 
         //create stream video call
 
         await streamClient.video.call("default", callId).getOrCreate({
             data: {
                 created_by_id: clerkId,
-                custom: { problem, difficulty, sessionId: session._id.toString() },
+                custom: { problem, difficulty: normalizedDifficulty, sessionId: session._id.toString() },
             },
         })
 
