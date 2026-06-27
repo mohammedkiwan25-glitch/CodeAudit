@@ -1,37 +1,70 @@
 import crypto from "crypto"
 import { chatClient, streamClient } from "../lib/stream.js"
+import Problem from "../models/Problem.js"
 import Session from "../models/Session.js"
 
+const createProblemSnapshot = (problem) => ({
+    id: problem.slug,
+    source: problem.source,
+    title: problem.title,
+    difficulty: problem.difficulty.slice(0, 1).toUpperCase() + problem.difficulty.slice(1),
+    category: problem.category,
+    description: problem.description,
+    examples: problem.examples,
+    constraints: problem.constraints,
+    starterCode: problem.starterCode,
+    expectedOutput: problem.expectedOutput,
+})
 
 export async function createSession(req, res) {
     try {
-        const { problem, difficulty, problemDetails } = req.body
+        const { problem, difficulty, problemDetails, problemId } = req.body
         const userId = req.user._id
         const clerkId = req.user.clerkId
 
-        if (!problem || !difficulty) {
+        let sessionProblem = problem
+        let normalizedDifficulty = difficulty?.toLowerCase()
+        let sessionProblemDetails = problemDetails
+        let selectedProblem = null
+
+        if (problemId) {
+            selectedProblem = await Problem.findOne({ _id: problemId, isPublic: true })
+
+            if (!selectedProblem) {
+                return res.status(404).json({ msg: "Selected problem not found" })
+            }
+
+            sessionProblem = selectedProblem.title
+            normalizedDifficulty = selectedProblem.difficulty
+            sessionProblemDetails = createProblemSnapshot(selectedProblem)
+        }
+
+        if (!sessionProblem || !normalizedDifficulty) {
             return res.status(400).json({ msg: "Problem and difficulty are required" })
         }
 
-        const normalizedDifficulty = difficulty.toLowerCase()
         if (!["easy", "medium", "hard"].includes(normalizedDifficulty)) {
             return res.status(400).json({ msg: "Unsupported difficulty" })
         }
 
-        const sessionProblemDetails = problemDetails
-            ? {
-                ...problemDetails,
-                title: problemDetails.title || problem,
-                difficulty: normalizedDifficulty,
-            }
-            : {
-                title: problem,
+        if (!sessionProblemDetails) {
+            sessionProblemDetails = {
+                title: sessionProblem,
                 difficulty: normalizedDifficulty,
                 description: { text: "", notes: [] },
                 examples: [],
                 constraints: [],
                 starterCode: {},
+                source: "custom",
             }
+        } else if (!selectedProblem) {
+            sessionProblemDetails = {
+                ...sessionProblemDetails,
+                title: sessionProblemDetails.title || sessionProblem,
+                difficulty: normalizedDifficulty,
+                source: sessionProblemDetails.source || "custom",
+            }
+        }
 
         //generate a unique callId for the video call
 
@@ -41,9 +74,10 @@ export async function createSession(req, res) {
         //create session in db 
 
         const session = await Session.create({
-            problem,
+            problem: sessionProblem,
             difficulty: normalizedDifficulty,
             problemDetails: sessionProblemDetails,
+            problemId: selectedProblem?._id || null,
             host: userId,
             callId,
             inviteToken,
@@ -54,14 +88,18 @@ export async function createSession(req, res) {
         await streamClient.video.call("default", callId).getOrCreate({
             data: {
                 created_by_id: clerkId,
-                custom: { problem, difficulty: normalizedDifficulty, sessionId: session._id.toString() },
+                custom: {
+                    problem: sessionProblem,
+                    difficulty: normalizedDifficulty,
+                    sessionId: session._id.toString(),
+                },
             },
         })
 
         //chat messaging
 
         const channel = chatClient.channel("messaging", callId, {
-            name: `${problem} Session`,
+            name: `${sessionProblem} Session`,
             created_by_id: clerkId,
             members: [clerkId]
         })
@@ -133,6 +171,17 @@ export async function getSessionById(req, res) {
 
         if (!isHost && !isParticipant && !hasInvite) {
             return res.status(403).json({ msg: "Invite link required to access this session" })
+        }
+
+        if (!session.problemDetails) {
+            const legacyProblem = await Problem.findOne({ title: session.problem })
+
+            if (legacyProblem) {
+                session.problemId = legacyProblem._id
+                session.problemDetails = createProblemSnapshot(legacyProblem)
+                session.markModified("problemDetails")
+                await session.save()
+            }
         }
 
         res.status(200).json({ session })

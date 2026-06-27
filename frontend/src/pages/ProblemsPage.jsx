@@ -1,12 +1,13 @@
 import { Link } from "react-router";
 import Navbar from "../components/Navbar";
 
-import { PROBLEMS } from "../data/problems.js";
-import { ChevronRightIcon, Code2Icon } from "lucide-react";
+import { ChevronRightIcon, Code2Icon, Loader2Icon } from "lucide-react";
 import { getDifficultyBadgeClass } from "../lib/utils";
+import { useProblems } from "../hooks/useProblems";
 
 function ProblemsPage() {
-  const problems = Object.values(PROBLEMS);
+  const { data, isLoading, isError } = useProblems();
+  const problems = data?.problems || [];
 
   const easyProblemsCount = problems.filter((p) => p.difficulty === "Easy").length;
   const mediumProblemsCount = problems.filter((p) => p.difficulty === "Medium").length;
@@ -27,7 +28,15 @@ function ProblemsPage() {
 
         {/* PROBLEMS LIST */}
         <div className="space-y-4">
-          {problems.map((problem) => (
+          {isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2Icon className="size-10 animate-spin text-primary" />
+            </div>
+          ) : isError ? (
+            <div className="alert alert-error">
+              <span>Unable to load problems. Make sure the backend server is running.</span>
+            </div>
+          ) : problems.map((problem) => (
             <Link
               key={problem.id}
               to={`/problem/${problem.id}`}

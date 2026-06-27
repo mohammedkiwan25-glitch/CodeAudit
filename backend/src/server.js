@@ -10,6 +10,8 @@ import { clerkMiddleware } from "@clerk/express"
 import chatRoutes from "./routes/chatRoutes.js"
 import sessionRoute from "./routes/sessionRoute.js"
 import compilerRoute from "./routes/compilerRoute.js"
+import problemRoute from "./routes/problemRoute.js"
+import { seedDefaultProblems } from "./lib/seedProblems.js"
 
 const app = express()
 
@@ -25,6 +27,7 @@ app.use("/api/inngest", serve({ client: inngest, functions }))
 app.use("/api/chat", chatRoutes)
 app.use("/api/sessions", sessionRoute)
 app.use("/api/compiler", compilerRoute)
+app.use("/api/problems", problemRoute)
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "success from backend" })
@@ -46,6 +49,7 @@ if (ENV.NODE_ENV === "production") {
 const startServer = async () => {
     try {
         await connectDB()
+        await seedDefaultProblems()
         app.listen(ENV.PORT, () => console.log("Server is running on port:", ENV.PORT))
     } catch (error) {
         console.error("Failed to start the server:", error)

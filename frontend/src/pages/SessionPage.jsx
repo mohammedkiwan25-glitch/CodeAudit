@@ -4,7 +4,6 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import toast from "react-hot-toast";
 import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
 import { sessionApi } from "../api/sessions";
-import { PROBLEMS } from "../data/problems";
 import { executeCode } from "../lib/piston";
 import Navbar from "../components/Navbar";
 import { getDifficultyBadgeClass } from "../lib/utils";
@@ -58,10 +57,7 @@ function SessionPage() {
     isParticipant
   );
 
-  const fallbackProblemData = session?.problem
-    ? Object.values(PROBLEMS).find((p) => p.title === session.problem)
-    : null;
-  const problemData = session?.problemDetails || fallbackProblemData;
+  const problemData = session?.problemDetails || null;
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");

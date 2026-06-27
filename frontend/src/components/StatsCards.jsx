@@ -1,34 +1,49 @@
-import { TrophyIcon, UsersIcon } from "lucide-react";
+import { BriefcaseBusinessIcon, HistoryIcon, UserRoundCheckIcon } from "lucide-react";
 
-function StatsCards({ activeSessionsCount, recentSessionsCount }) {
+function StatsCards({ recentSessionsCount, hostedSessionsCount, joinedSessionsCount }) {
+  const stats = [
+    {
+      label: "Completed Interviews",
+      value: recentSessionsCount,
+      icon: HistoryIcon,
+      color: "text-primary",
+      iconBg: "bg-primary/10",
+    },
+    {
+      label: "Hosted By Me",
+      value: hostedSessionsCount,
+      icon: BriefcaseBusinessIcon,
+      color: "text-secondary",
+      iconBg: "bg-secondary/10",
+    },
+    {
+      label: "Joined By Me",
+      value: joinedSessionsCount,
+      icon: UserRoundCheckIcon,
+      color: "text-accent",
+      iconBg: "bg-accent/10",
+    },
+  ];
+
   return (
-    <div className="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
-      {/* Active Count */}
-      <div className="card bg-base-100 border-2 border-primary/20 hover:border-primary/40">
-        <div className="card-body p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 sm:p-2.5 bg-primary/10 rounded-xl">
-              <UsersIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            </div>
-            <div className="badge badge-primary badge-sm sm:badge-md">Live</div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-black leading-none mb-1">{activeSessionsCount}</div>
-          <div className="text-sm opacity-60">Active Sessions</div>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      {stats.map((stat) => {
+        const Icon = stat.icon;
 
-      {/* Recent Count */}
-      <div className="card bg-base-100 border-2 border-secondary/20 hover:border-secondary/40">
-        <div className="card-body p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 sm:p-2.5 bg-secondary/10 rounded-xl">
-              <TrophyIcon className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
+        return (
+          <div key={stat.label} className="card bg-base-100 border border-base-300">
+            <div className="card-body p-4 sm:p-5 flex-row items-center gap-4">
+              <div className={`size-11 rounded-lg ${stat.iconBg} flex items-center justify-center shrink-0`}>
+                <Icon className={`size-5 ${stat.color}`} />
+              </div>
+              <div>
+                <div className="text-2xl font-black leading-none">{stat.value}</div>
+                <div className="text-sm text-base-content/60 mt-1">{stat.label}</div>
+              </div>
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black leading-none mb-1">{recentSessionsCount}</div>
-          <div className="text-sm opacity-60">Total Sessions</div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
