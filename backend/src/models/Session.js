@@ -14,6 +14,11 @@ const SessionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default: null,
     },
+    problemId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Problem",
+        default: null,
+    },
     host: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",

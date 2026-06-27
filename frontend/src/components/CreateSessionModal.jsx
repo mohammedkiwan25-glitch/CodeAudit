@@ -1,5 +1,4 @@
 import { Code2Icon, LoaderIcon, PlusIcon } from "lucide-react";
-import { PROBLEMS } from "../data/problems";
 
 function CreateSessionModal({
   isOpen,
@@ -8,8 +7,9 @@ function CreateSessionModal({
   setRoomConfig,
   onCreateRoom,
   isCreating,
+  problems,
+  isLoadingProblems,
 }) {
-  const problems = Object.values(PROBLEMS);
   const isCustomProblem = roomConfig.problemSource === "custom";
 
   const updateCustomProblem = (field, value) => {
@@ -39,6 +39,7 @@ function CreateSessionModal({
                 setRoomConfig({
                   problemSource: "built-in",
                   problem: "",
+                  problemId: null,
                   difficulty: "",
                   problemDetails: null,
                   customProblem: roomConfig.customProblem,
@@ -55,6 +56,7 @@ function CreateSessionModal({
                   ...roomConfig,
                   problemSource: "custom",
                   problem: roomConfig.customProblem?.title || "",
+                  problemId: null,
                   difficulty: roomConfig.customProblem?.difficulty || "Medium",
                   problemDetails: null,
                 })
@@ -75,10 +77,12 @@ function CreateSessionModal({
               <select
                 className="select w-full"
                 value={roomConfig.problem}
+                disabled={isLoadingProblems}
                 onChange={(e) => {
                   const selectedProblem = problems.find((p) => p.title === e.target.value);
                   setRoomConfig({
                     ...roomConfig,
+                    problemId: selectedProblem._id,
                     difficulty: selectedProblem.difficulty,
                     problem: e.target.value,
                     problemDetails: selectedProblem,
@@ -86,7 +90,7 @@ function CreateSessionModal({
                 }}
               >
                 <option value="" disabled>
-                  Choose a coding problem...
+                  {isLoadingProblems ? "Loading problems..." : "Choose a coding problem..."}
                 </option>
 
                 {problems.map((problem) => (

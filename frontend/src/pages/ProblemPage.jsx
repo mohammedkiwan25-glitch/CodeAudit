@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { PROBLEMS } from "../data/problems";
 import Navbar from "../components/Navbar";
 
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -11,6 +10,8 @@ import { executeCode } from "../lib/piston";
 
 import toast from "react-hot-toast";
 import confetti from "canvas-confetti";
+import { Loader2Icon } from "lucide-react";
+import { useProblems } from "../hooks/useProblems";
 
 const TEST_RESULT_PREFIX = "__CODEAUDIT_TESTS__";
 
@@ -63,27 +64,31 @@ const TEST_CONFIG = {
 function ProblemPage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const { data: problemsData, isLoading: loadingProblems, isError: problemsError } = useProblems()
+    const problems = useMemo(() => problemsData?.problems || [], [problemsData?.problems])
 
     const [currentProblemId, setCurrentProblemId] = useState("two-sum")
     const [selectedLanguage, setSelectedLanguage] = useState("javascript")
-    const [code, setCode] = useState(PROBLEMS[currentProblemId].starterCode.javascript)
+    const [code, setCode] = useState("")
     const [output, setOutput] = useState(null)
     const [isRunning, setIsRunning] = useState(false)
 
-    const currentProblem = PROBLEMS[currentProblemId]
+    const currentProblem = problems.find((problem) => problem.id === currentProblemId)
 
     useEffect(() => {
-        if (id && PROBLEMS[id]) {
+        const selectedProblem = problems.find((problem) => problem.id === id)
+
+        if (id && selectedProblem) {
             setCurrentProblemId(id)
-            setCode(PROBLEMS[id].starterCode[selectedLanguage])
+            setCode(selectedProblem.starterCode?.[selectedLanguage] || "")
             setOutput(null)
         }
-    }, [id, selectedLanguage])
+    }, [id, selectedLanguage, problems])
 
     const handleLanguageChange = (e) => {
         const newLang = e.target.value
         setSelectedLanguage(newLang)
-        setCode(currentProblem.starterCode[newLang])
+        setCode(currentProblem?.starterCode?.[newLang] || "")
         setOutput(null)
     }
 
@@ -319,27 +324,51 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
         toast.error(failedMessage)
     }
 
+    if (loadingProblems) {
+        return (
+            <div className="min-h-screen bg-base-200 flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center">
+                    <Loader2Icon className="size-12 animate-spin text-primary" />
+                </div>
+            </div>
+        )
+    }
+
+    if (problemsError || !currentProblem) {
+        return (
+            <div className="min-h-screen bg-base-200 flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex items-center justify-center px-4">
+                    <div className="alert alert-error max-w-md">
+                        <span>Unable to load this problem.</span>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className='h-screen w-screen bg-base-100 flex flex-col overflow-hidden'>
             <Navbar />
 
             {/* DESKTOP layout - panels */}
-            <div className='flex-1 hidden md:block'>
-                <PanelGroup direction='horizontal'>
+            <div className='flex-1 min-h-0 hidden md:block overflow-hidden'>
+                <PanelGroup direction='horizontal' className='h-full'>
                     <Panel defaultSize={40} minSize={30}>
                         <ProblemDescription
                             problem={currentProblem}
                             currentProblemId={currentProblemId}
                             onProblemChange={handleProblemChange}
-                            allProblems={Object.values(PROBLEMS)}
+                            allProblems={problems}
                         />
                     </Panel>
 
                     <PanelResizeHandle className='w-2 bg-base-300 hover:bg-primary transition-colors cursor-col-resize' />
 
                     <Panel defaultSize={60} minSize={30}>
-                        <PanelGroup direction='vertical'>
-                            <Panel defaultSize={70} minSize={30}>
+                        <PanelGroup direction='vertical' className='h-full'>
+                            <Panel defaultSize={65} minSize={30}>
                                 <CodeEditorPanel
                                     selectedLanguage={selectedLanguage}
                                     code={code}
@@ -350,7 +379,7 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
                                 />
                             </Panel>
                             <PanelResizeHandle className='h-2 bg-base-300 hover:bg-primary transition-colors cursor-row-resize' />
-                            <Panel defaultSize={30} minSize={30}>
+                            <Panel defaultSize={35} minSize={25}>
                                 <OutputPanel output={output} />
                             </Panel>
                         </PanelGroup>
@@ -365,7 +394,7 @@ print("${TEST_RESULT_PREFIX}" + str(__passed) + "/" + str(len(__codeAuditTests))
                         problem={currentProblem}
                         currentProblemId={currentProblemId}
                         onProblemChange={handleProblemChange}
-                        allProblems={Object.values(PROBLEMS)}
+                        allProblems={problems}
                     />
                 </div>
                 <div className='h-[520px] shrink-0'>

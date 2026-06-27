@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
 import { useActiveSessions, useCreateSession, useMyRecentSessions } from "../hooks/useSessions";
+import { useProblems } from "../hooks/useProblems";
 
 import Navbar from "../components/Navbar";
 import WelcomeSection from "../components/WelcomeSection";
@@ -32,6 +33,7 @@ function DashboardPage() {
   const [roomConfig, setRoomConfig] = useState({
     problemSource: "built-in",
     problem: "",
+    problemId: null,
     difficulty: "",
     problemDetails: null,
     customProblem: {
@@ -44,6 +46,7 @@ function DashboardPage() {
   });
 
   const createSessionMutation = useCreateSession();
+  const { data: problemsData, isLoading: loadingProblems } = useProblems();
 
   const {
     data: activeSessionsData,
@@ -84,14 +87,12 @@ function DashboardPage() {
             .filter(Boolean),
           starterCode: DEFAULT_CUSTOM_STARTER_CODE,
         }
-      : {
-          ...roomConfig.problemDetails,
-          source: "built-in",
-        };
+      : null;
 
     createSessionMutation.mutate(
       {
         problem: problemTitle,
+        problemId: isCustomProblem ? null : roomConfig.problemId,
         difficulty: roomConfig.difficulty.toLowerCase(),
         problemDetails,
       },
@@ -119,26 +120,37 @@ function DashboardPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-base-300">
+      <div className="min-h-screen bg-base-200">
         <Navbar />
         <WelcomeSection onCreateSession={() => setShowCreateModal(true)} />
 
-        {/* Grid layout */}
-        <div className="container mx-auto px-4 sm:px-6 pb-10 sm:pb-16">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-12 sm:pb-16 space-y-8">
           {(activeSessionsError || recentSessionsError) && (
-            <div className="alert alert-error mb-6">
+            <div className="alert alert-error">
               <span>Unable to load interviews. Make sure the backend server is running.</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 overflow-hidden">
-            <StatsCards
-              activeSessionsCount={activeSessions.length}
-              recentSessionsCount={recentSessions.length}
-            />
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <StatsCards
+            recentSessionsCount={recentSessions.length}
+            hostedSessionsCount={createdRecentSessions.length}
+            joinedSessionsCount={joinedRecentSessions.length}
+          />
+
+          <section>
+            <div className="flex items-end justify-between gap-4 mb-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-primary">Live</p>
+                <h2 className="text-2xl font-black mt-1">Active Interviews</h2>
+              </div>
+              <p className="text-sm text-base-content/50 hidden sm:block">
+                Rejoin interviews currently in progress
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
               <ActiveSessions
-                title="Created By Me"
+                title="Hosted By Me"
                 sessions={createdActiveSessions}
                 isLoading={loadingActiveSessions}
                 isUserInSession={isUserInSession}
@@ -154,25 +166,37 @@ function DashboardPage() {
                 emptyText="Interviews you join from invite links will appear here."
               />
             </div>
-          </div>
+          </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 sm:mt-8">
-            <RecentSessions
-              title="Past Interviews Created By Me"
-              sessions={createdRecentSessions}
-              isLoading={loadingRecentSessions}
-              emptyText="Completed interviews you hosted will appear here."
-              compact
-            />
-            <RecentSessions
-              title="Past Interviews Joined By Me"
-              sessions={joinedRecentSessions}
-              isLoading={loadingRecentSessions}
-              emptyText="Completed interviews you joined will appear here."
-              compact
-            />
-          </div>
-        </div>
+          <section>
+            <div className="flex items-end justify-between gap-4 mb-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-secondary">History</p>
+                <h2 className="text-2xl font-black mt-1">Completed Interviews</h2>
+              </div>
+              <p className="text-sm text-base-content/50 hidden sm:block">
+                Open any interview to review its final code and output
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RecentSessions
+                title="Hosted By Me"
+                sessions={createdRecentSessions}
+                isLoading={loadingRecentSessions}
+                emptyText="Completed interviews you hosted will appear here."
+                compact
+              />
+              <RecentSessions
+                title="Joined By Me"
+                sessions={joinedRecentSessions}
+                isLoading={loadingRecentSessions}
+                emptyText="Completed interviews you joined will appear here."
+                compact
+              />
+            </div>
+          </section>
+        </main>
       </div>
 
       <CreateSessionModal
@@ -182,6 +206,8 @@ function DashboardPage() {
         setRoomConfig={setRoomConfig}
         onCreateRoom={handleCreateRoom}
         isCreating={createSessionMutation.isPending}
+        problems={problemsData?.problems || []}
+        isLoadingProblems={loadingProblems}
       />
     </>
   );
