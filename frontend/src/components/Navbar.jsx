@@ -1,11 +1,22 @@
 import { Link, useLocation } from "react-router";
-import { BookOpenIcon, LayoutDashboardIcon, SparklesIcon } from "lucide-react";
+import { BarChart3Icon, BookOpenIcon, CalendarDaysIcon, LayoutDashboardIcon, ShieldCheckIcon, SparklesIcon } from "lucide-react";
 import { UserButton } from "@clerk/clerk-react";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 function Navbar() {
   const location = useLocation();
+  const { data: currentUserData } = useCurrentUser();
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const links = [
+    { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboardIcon className="size-4" /> },
+    { to: "/interviews", label: "Interviews", icon: <CalendarDaysIcon className="size-4" /> },
+    { to: "/problems", label: "Problems", icon: <BookOpenIcon className="size-4" /> },
+    { to: "/analytics", label: "Analytics", icon: <BarChart3Icon className="size-4" /> },
+    ...(currentUserData?.user?.role === "supervisor"
+      ? [{ to: "/supervisor", label: "Supervisor", icon: <ShieldCheckIcon className="size-4" /> }]
+      : []),
+  ];
 
   return (
     <nav className="bg-base-100/80 backdrop-blur-md border-b border-primary/20 sticky top-0 z-50 shadow-lg">
@@ -30,41 +41,11 @@ function Navbar() {
         </Link>
 
         <div className="flex items-center gap-1 shrink-0">
-          {/* PROBLEMS PAGE LINK */}
-          <Link
-            to={"/problems"}
-            className={`px-2.5 sm:px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/problems")
-                  ? "bg-primary text-primary-content"
-                  : "hover:bg-base-200 text-base-content/70 hover:text-base-content"
-              }
-              
-              `}
-          >
-            <div className="flex items-center gap-x-2.5">
-              <BookOpenIcon className="size-4" />
-              <span className="font-medium hidden sm:inline">Problems</span>
-            </div>
-          </Link>
-
-          {/* DASHBOARD PAGE LINK */}
-          <Link
-            to={"/dashboard"}
-            className={`px-2.5 sm:px-4 py-2.5 rounded-lg transition-all duration-200 
-              ${
-                isActive("/dashboard")
-                  ? "bg-primary text-primary-content"
-                  : "hover:bg-base-200 text-base-content/70 hover:text-base-content"
-              }
-              
-              `}
-          >
-            <div className="flex items-center gap-x-2.5">
-              <LayoutDashboardIcon className="size-4" />
-              <span className="font-medium hidden sm:inline">Dashboard</span>
-            </div>
-          </Link>
+          {links.map(({ to, label, icon }) => (
+            <Link key={to} to={to} title={label} className={`px-2.5 lg:px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive(to) ? "bg-primary text-primary-content" : "hover:bg-base-200 text-base-content/70 hover:text-base-content"}`}>
+              <div className="flex items-center gap-2">{icon}<span className="font-medium hidden lg:inline">{label}</span></div>
+            </Link>
+          ))}
 
           <div className="ml-1 sm:ml-4 mt-1 sm:mt-2">
             <UserButton />

@@ -1,52 +1,16 @@
 import { useNavigate } from "react-router";
 import { useUser } from "@clerk/clerk-react";
-import { useState } from "react";
-import { useActiveSessions, useCreateSession, useMyRecentSessions } from "../hooks/useSessions";
-import { useProblems } from "../hooks/useProblems";
+import { useActiveSessions, useMyRecentSessions } from "../hooks/useSessions";
 
 import Navbar from "../components/Navbar";
 import WelcomeSection from "../components/WelcomeSection";
 import StatsCards from "../components/StatsCards";
 import ActiveSessions from "../components/ActiveSessions";
 import RecentSessions from "../components/RecentSessions";
-import CreateSessionModal from "../components/CreateSessionModal";
-
-const DEFAULT_CUSTOM_STARTER_CODE = {
-  javascript: `function solution() {
-  // Write your solution here
-  
-}`,
-  python: `def solution():
-    # Write your solution here
-    pass`,
-  java: `class Solution {
-    public static void main(String[] args) {
-        // Write your solution here
-    }
-}`,
-};
 
 function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useUser();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [roomConfig, setRoomConfig] = useState({
-    problemSource: "built-in",
-    problem: "",
-    problemId: null,
-    difficulty: "",
-    problemDetails: null,
-    customProblem: {
-      title: "",
-      difficulty: "Medium",
-      description: "",
-      example: "",
-      constraints: "",
-    },
-  });
-
-  const createSessionMutation = useCreateSession();
-  const { data: problemsData, isLoading: loadingProblems } = useProblems();
 
   const {
     data: activeSessionsData,
@@ -58,52 +22,6 @@ function DashboardPage() {
     isLoading: loadingRecentSessions,
     isError: recentSessionsError,
   } = useMyRecentSessions();
-
-  const handleCreateRoom = () => {
-    const isCustomProblem = roomConfig.problemSource === "custom";
-    const customProblem = roomConfig.customProblem || {};
-    const problemTitle = isCustomProblem ? customProblem.title?.trim() : roomConfig.problem?.trim();
-
-    if (!problemTitle || !roomConfig.difficulty) return;
-    if (isCustomProblem && !customProblem.description?.trim()) return;
-
-    const problemDetails = isCustomProblem
-      ? {
-          id: `custom-${Date.now()}`,
-          source: "custom",
-          title: problemTitle,
-          difficulty: customProblem.difficulty,
-          category: "Custom Interview Problem",
-          description: {
-            text: customProblem.description.trim(),
-            notes: [],
-          },
-          examples: customProblem.example.trim()
-            ? [{ input: customProblem.example.trim(), output: "" }]
-            : [],
-          constraints: customProblem.constraints
-            .split("\n")
-            .map((constraint) => constraint.trim())
-            .filter(Boolean),
-          starterCode: DEFAULT_CUSTOM_STARTER_CODE,
-        }
-      : null;
-
-    createSessionMutation.mutate(
-      {
-        problem: problemTitle,
-        problemId: isCustomProblem ? null : roomConfig.problemId,
-        difficulty: roomConfig.difficulty.toLowerCase(),
-        problemDetails,
-      },
-      {
-        onSuccess: (data) => {
-          setShowCreateModal(false);
-          navigate(`/session/${data.session._id}`);
-        },
-      }
-    );
-  };
 
   const activeSessions = activeSessionsData?.sessions || [];
   const recentSessions = recentSessionsData?.sessions || [];
@@ -119,10 +37,9 @@ function DashboardPage() {
   };
 
   return (
-    <>
       <div className="min-h-screen bg-base-200">
         <Navbar />
-        <WelcomeSection onCreateSession={() => setShowCreateModal(true)} />
+        <WelcomeSection onCreateSession={() => navigate("/interviews/new")} />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-12 sm:pb-16 space-y-8">
           {(activeSessionsError || recentSessionsError) && (
@@ -198,18 +115,6 @@ function DashboardPage() {
           </section>
         </main>
       </div>
-
-      <CreateSessionModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        roomConfig={roomConfig}
-        setRoomConfig={setRoomConfig}
-        onCreateRoom={handleCreateRoom}
-        isCreating={createSessionMutation.isPending}
-        problems={problemsData?.problems || []}
-        isLoadingProblems={loadingProblems}
-      />
-    </>
   );
 }
 

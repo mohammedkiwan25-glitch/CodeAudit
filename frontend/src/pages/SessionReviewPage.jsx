@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { ClockIcon, Code2Icon, Loader2Icon, UsersIcon } from "lucide-react";
 import Navbar from "../components/Navbar";
 import OutputPanel from "../components/OutputPanel";
@@ -73,9 +73,10 @@ function SessionReviewPage() {
             </div>
           </div>
 
-          <button className="btn btn-primary w-full sm:w-auto" onClick={() => navigate("/dashboard")}>
-            Back to Dashboard
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link className="btn btn-outline" to={`/session/${id}/report`}>Interview Report</Link>
+            <button className="btn btn-primary" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+          </div>
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

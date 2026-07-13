@@ -11,4 +11,8 @@ export const ENV= {
     STREAM_API_KEY:process.env.STREAM_API_KEY,
     STREAM_API_SECRET:process.env.STREAM_API_SECRET,
     CLIENT_URL:process.env.CLIENT_URL,
+    SUPERVISOR_EMAILS: (process.env.SUPERVISOR_EMAILS || "")
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
 };

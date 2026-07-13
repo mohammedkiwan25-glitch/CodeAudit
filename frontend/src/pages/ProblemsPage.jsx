@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import Navbar from "../components/Navbar";
 
-import { ChevronRightIcon, Code2Icon, Loader2Icon } from "lucide-react";
+import { ChevronRightIcon, Code2Icon, FolderCogIcon, Loader2Icon } from "lucide-react";
 import { getDifficultyBadgeClass } from "../lib/utils";
 import { useProblems } from "../hooks/useProblems";
 
@@ -19,11 +19,12 @@ function ProblemsPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
         {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Practice Problems</h1>
-          <p className="text-base-content/70">
-            Sharpen your coding skills with these curated problems
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold mb-2">Practice Problems</h1>
+            <p className="text-base-content/70">Sharpen your coding skills with these curated problems</p>
+          </div>
+          <Link to="/my-problems" className="btn btn-outline gap-2"><FolderCogIcon className="size-4" /> Manage My Problems</Link>
         </div>
 
         {/* PROBLEMS LIST */}

@@ -64,6 +64,41 @@ const SessionSchema = new mongoose.Schema({
     endedAt: {
         type: Date,
     },
+    report: {
+        outcome: {
+            type: String,
+            enum: ['pending', 'strong-hire', 'hire', 'no-hire'],
+            default: 'pending',
+        },
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: null,
+        },
+        rubric: {
+            problemSolving: { type: Number, min: 1, max: 5, default: null },
+            correctness: { type: Number, min: 1, max: 5, default: null },
+            codeQuality: { type: Number, min: 1, max: 5, default: null },
+            communication: { type: Number, min: 1, max: 5, default: null },
+            complexity: { type: Number, min: 1, max: 5, default: null },
+        },
+        notes: {
+            type: String,
+            default: "",
+        },
+        strengths: {
+            type: String,
+            default: "",
+        },
+        improvements: {
+            type: String,
+            default: "",
+        },
+        updatedAt: {
+            type: Date,
+        },
+    },
 }, {timestamps: true}
 )
 
