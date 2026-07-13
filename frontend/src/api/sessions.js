@@ -14,6 +14,14 @@ export const sessionApi = {
     const response = await axiosInstance.get("/sessions/my-recent");
     return response.data;
   },
+  getSessionHistory: async () => {
+    const response = await axiosInstance.get("/sessions/history");
+    return response.data;
+  },
+  getSessionAnalytics: async () => {
+    const response = await axiosInstance.get("/sessions/analytics");
+    return response.data;
+  },
 
   getSessionById: async (id, inviteToken) => {
     const response = await axiosInstance.get(`/sessions/${id}`, {
@@ -32,6 +40,10 @@ export const sessionApi = {
   },
   updateSessionWorkspace: async (id, data) => {
     const response = await axiosInstance.patch(`/sessions/${id}/workspace`, data);
+    return response.data;
+  },
+  updateSessionReport: async ({ id, report }) => {
+    const response = await axiosInstance.patch(`/sessions/${id}/report`, report);
     return response.data;
   },
   getStreamToken: async () => {

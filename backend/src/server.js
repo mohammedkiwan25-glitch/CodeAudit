@@ -11,6 +11,8 @@ import chatRoutes from "./routes/chatRoutes.js"
 import sessionRoute from "./routes/sessionRoute.js"
 import compilerRoute from "./routes/compilerRoute.js"
 import problemRoute from "./routes/problemRoute.js"
+import userRoute from "./routes/userRoute.js"
+import supervisorRoute from "./routes/supervisorRoute.js"
 import { seedDefaultProblems } from "./lib/seedProblems.js"
 
 const app = express()
@@ -28,6 +30,8 @@ app.use("/api/chat", chatRoutes)
 app.use("/api/sessions", sessionRoute)
 app.use("/api/compiler", compilerRoute)
 app.use("/api/problems", problemRoute)
+app.use("/api/users", userRoute)
+app.use("/api/supervisor", supervisorRoute)
 
 app.get("/health", (req, res) => {
     res.status(200).json({ msg: "success from backend" })

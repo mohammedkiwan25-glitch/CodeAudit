@@ -16,6 +16,8 @@ const createProblemSnapshot = (problem) => ({
     expectedOutput: problem.expectedOutput,
 })
 
+const RUBRIC_KEYS = ["problemSolving", "correctness", "codeQuality", "communication", "complexity"]
+
 export async function createSession(req, res) {
     try {
         const { problem, difficulty, problemDetails, problemId } = req.body
@@ -28,7 +30,10 @@ export async function createSession(req, res) {
         let selectedProblem = null
 
         if (problemId) {
-            selectedProblem = await Problem.findOne({ _id: problemId, isPublic: true })
+            selectedProblem = await Problem.findOne({
+                _id: problemId,
+                $or: [{ isPublic: true }, { createdBy: userId }],
+            })
 
             if (!selectedProblem) {
                 return res.status(404).json({ msg: "Selected problem not found" })
@@ -153,6 +158,91 @@ export async function getMyRecentSessions(req, res) {
     }
 }
 
+export async function getSessionHistory(req, res) {
+    try {
+        const userId = req.user._id
+        const sessions = await Session.find({
+            $or: [{ host: userId }, { participant: userId }]
+        })
+            .populate("host", "name profileImage email clerkId")
+            .populate("participant", "name profileImage email clerkId")
+            .sort({ createdAt: -1 })
+            .limit(100)
+
+        res.status(200).json({ sessions })
+    } catch (error) {
+        console.log("Error fetching session history:", error)
+        res.status(500).json({ msg: "Failed to fetch interview history" })
+    }
+}
+
+export async function getSessionAnalytics(req, res) {
+    try {
+        const userId = req.user._id
+        const sessions = await Session.find({
+            $or: [{ host: userId }, { participant: userId }]
+        }).select("host participant status difficulty workspace.language createdAt endedAt updatedAt report.rating")
+
+        const completed = sessions.filter((session) => session.status === "completed")
+        const completedWithDuration = completed.filter((session) => {
+            if (!session.endedAt) return false
+            return new Date(session.endedAt) >= new Date(session.createdAt)
+        })
+        const totalDuration = completedWithDuration.reduce(
+            (sum, session) => sum + (new Date(session.endedAt) - new Date(session.createdAt)),
+            0
+        )
+
+        const countBy = (items, getKey) => items.reduce((counts, item) => {
+            const key = getKey(item) || "unknown"
+            counts[key] = (counts[key] || 0) + 1
+            return counts
+        }, {})
+
+        const monthFormatter = new Intl.DateTimeFormat("en", { month: "short" })
+        const monthlyActivity = Array.from({ length: 6 }, (_, index) => {
+            const date = new Date()
+            date.setDate(1)
+            date.setHours(0, 0, 0, 0)
+            date.setMonth(date.getMonth() - (5 - index))
+
+            const nextMonth = new Date(date)
+            nextMonth.setMonth(nextMonth.getMonth() + 1)
+
+            return {
+                label: monthFormatter.format(date),
+                count: sessions.filter((session) => {
+                    const createdAt = new Date(session.createdAt)
+                    return createdAt >= date && createdAt < nextMonth
+                }).length,
+            }
+        })
+
+        res.status(200).json({
+            analytics: {
+                total: sessions.length,
+                active: sessions.length - completed.length,
+                completed: completed.length,
+                hosted: sessions.filter((session) => session.host.toString() === userId.toString()).length,
+                joined: sessions.filter((session) => session.participant?.toString() === userId.toString()).length,
+                averageDurationMinutes: completedWithDuration.length
+                    ? Math.max(1, Math.round(totalDuration / completedWithDuration.length / 60000))
+                    : 0,
+                averageRating: completed.filter((session) => session.report?.rating).length
+                    ? Number((completed.reduce((sum, session) => sum + (session.report?.rating || 0), 0) /
+                        completed.filter((session) => session.report?.rating).length).toFixed(1))
+                    : 0,
+                byDifficulty: countBy(sessions, (session) => session.difficulty),
+                byLanguage: countBy(sessions, (session) => session.workspace?.language),
+                monthlyActivity,
+            },
+        })
+    } catch (error) {
+        console.log("Error fetching session analytics:", error)
+        res.status(500).json({ msg: "Failed to fetch analytics" })
+    }
+}
+
 export async function getSessionById(req, res) {
     try {
         const { id } = req.params
@@ -167,9 +257,10 @@ export async function getSessionById(req, res) {
 
         const isHost = session.host._id.toString() === userId.toString()
         const isParticipant = session.participant?._id.toString() === userId.toString()
+        const isSupervisor = req.user.role === "supervisor"
         const hasInvite = session.inviteToken && inviteToken === session.inviteToken
 
-        if (!isHost && !isParticipant && !hasInvite) {
+        if (!isHost && !isParticipant && !isSupervisor && !hasInvite) {
             return res.status(403).json({ msg: "Invite link required to access this session" })
         }
 
@@ -184,7 +275,10 @@ export async function getSessionById(req, res) {
             }
         }
 
-        res.status(200).json({ session })
+        const responseSession = session.toObject()
+        if (!isHost && !isSupervisor && responseSession.report) responseSession.report.notes = ""
+
+        res.status(200).json({ session: responseSession })
     } catch (error) {
         console.log("Error fetching session by id:", error)
         res.status(500).json({ msg: "Failed to fetch session" })
@@ -296,5 +390,63 @@ export async function updateSessionWorkspace(req, res) {
     } catch (error) {
         console.log("Error updating session workspace:", error)
         res.status(500).json({ msg: "Failed to update session workspace" })
+    }
+}
+
+export async function updateSessionReport(req, res) {
+    try {
+        const { id } = req.params
+        const userId = req.user._id
+        const { outcome, rubric = {}, notes, strengths, improvements } = req.body
+        const session = await Session.findById(id)
+
+        if (!session) return res.status(404).json({ msg: "Session not found" })
+        if (session.host.toString() !== userId.toString()) {
+            return res.status(403).json({ msg: "Only the host can update the interview report" })
+        }
+        if (session.status !== "completed") {
+            return res.status(400).json({ msg: "Reports can only be saved for completed interviews" })
+        }
+
+        const validOutcomes = ["pending", "strong-hire", "hire", "no-hire"]
+        if (!validOutcomes.includes(outcome)) {
+            return res.status(400).json({ msg: "Invalid interview outcome" })
+        }
+        const normalizedRubric = {}
+        for (const key of RUBRIC_KEYS) {
+            const value = rubric[key]
+            if (value === null || value === undefined || value === "") {
+                normalizedRubric[key] = null
+                continue
+            }
+
+            const score = Number(value)
+            if (!Number.isInteger(score) || score < 1 || score > 5) {
+                return res.status(400).json({ msg: "Every rubric score must be an integer between 1 and 5" })
+            }
+            normalizedRubric[key] = score
+        }
+
+        const scores = Object.values(normalizedRubric).filter((score) => score !== null)
+        const rating = scores.length
+            ? Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(1))
+            : null
+
+        session.report = {
+            outcome,
+            rating,
+            rubric: normalizedRubric,
+            notes: typeof notes === "string" ? notes.slice(0, 5000) : "",
+            strengths: typeof strengths === "string" ? strengths.slice(0, 3000) : "",
+            improvements: typeof improvements === "string" ? improvements.slice(0, 3000) : "",
+            updatedAt: new Date(),
+        }
+        session.markModified("report")
+        await session.save()
+
+        res.status(200).json({ report: session.report })
+    } catch (error) {
+        console.log("Error updating session report:", error)
+        res.status(500).json({ msg: "Failed to update interview report" })
     }
 }

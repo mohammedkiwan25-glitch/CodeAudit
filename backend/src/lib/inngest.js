@@ -2,6 +2,7 @@ import { Inngest } from "inngest";
 import { connectDB } from "./db.js";
 import User from "../models/User.js";
 import { deleteStreamUser, upsertStreamUser } from "./stream.js";
+import { ENV } from "./env.js";
 
 
 export const inngest = new Inngest({ id: "code-audit" })
@@ -18,7 +19,10 @@ const syncUser = inngest.createFunction(
             clerkId: id,
             email:email_addresses[0]?.email_address,
             name: `${first_name || ""} ${last_name || ""}`,
-            profileImage:image_url
+            profileImage:image_url,
+            role: ENV.SUPERVISOR_EMAILS.includes(email_addresses[0]?.email_address?.toLowerCase())
+                ? "supervisor"
+                : "user",
         }
 
         await User.create(newUser)

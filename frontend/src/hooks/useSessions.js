@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { sessionApi } from "../api/sessions";
 
@@ -30,6 +30,18 @@ export const useMyRecentSessions = () => {
 
     return result;
 };
+
+export const useSessionHistory = () =>
+    useQuery({
+        queryKey: ["sessionHistory"],
+        queryFn: sessionApi.getSessionHistory,
+    });
+
+export const useSessionAnalytics = () =>
+    useQuery({
+        queryKey: ["sessionAnalytics"],
+        queryFn: sessionApi.getSessionAnalytics,
+    });
 
 export const useSessionById = (id, inviteToken) => {
     const result = useQuery({
@@ -63,4 +75,18 @@ export const useEndSession = () => {
     });
 
     return result;
+};
+
+export const useUpdateSessionReport = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: sessionApi.updateSessionReport,
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["session", variables.id] });
+            queryClient.invalidateQueries({ queryKey: ["sessionAnalytics"] });
+            toast.success("Interview report saved");
+        },
+        onError: (error) => toast.error(error.response?.data?.msg || "Failed to save report"),
+    });
 };
