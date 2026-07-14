@@ -1,6 +1,6 @@
 import { useUser } from '@clerk/clerk-react'
 import { Toaster } from 'react-hot-toast'
-import { Navigate, Route, Routes, useLocation } from 'react-router'
+import { Navigate, Route, Routes } from 'react-router'
 import DashboardPage from './pages/DashboardWorkspacePage'
 import HomePage from './pages/HomeLandingPage'
 import ProblemPage from './pages/ProblemPage'
@@ -19,35 +19,27 @@ import InterviewErrorBoundary from './components/InterviewErrorBoundary'
 function App() {
 
   const { isSignedIn, isLoaded } = useUser()
-  const location = useLocation()
 
   //get rid of flickering
   if (!isLoaded) return null;
 
-  const requestedPath = new URLSearchParams(location.search).get("redirect")
-  const signedInDestination = requestedPath?.startsWith("/") && !requestedPath.startsWith("//")
-    ? requestedPath
-    : "/dashboard"
-  const signInDestination = `/?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`
-  const protectedPage = (page) => isSignedIn ? page : <Navigate to={signInDestination} replace />
-
   return (
     <>
       <Routes>
-        <Route path='/' element={!isSignedIn ? <HomePage /> : <Navigate to={signedInDestination} replace />} />
-        <Route path='/dashboard' element={protectedPage(<DashboardPage />)} />
-        <Route path='/problems' element={protectedPage(<ProblemsPage />)} />
-        <Route path='/problem/:id' element={protectedPage(<ProblemPage />)} />
-        <Route path='/my-problems' element={protectedPage(<MyProblemsPage />)} />
-        <Route path='/my-problems/new' element={protectedPage(<ProblemEditorPage />)} />
-        <Route path='/my-problems/:id/edit' element={protectedPage(<ProblemEditorPage />)} />
-        <Route path='/interviews' element={protectedPage(<InterviewHistoryPage />)} />
-        <Route path='/interviews/new' element={protectedPage(<InterviewSetupPage />)} />
-        <Route path='/analytics' element={protectedPage(<AnalyticsPage />)} />
-        <Route path='/supervisor' element={protectedPage(<SupervisorDashboardPage />)} />
-        <Route path='/session/:id' element={protectedPage(<InterviewErrorBoundary><SessionPage /></InterviewErrorBoundary>)} />
-        <Route path='/session/:id/review' element={protectedPage(<SessionReviewPage />)} />
-        <Route path='/session/:id/report' element={protectedPage(<SessionReportPage />)} />
+        <Route path='/' element={!isSignedIn ? <HomePage /> : <Navigate to={"/dashboard"} />} />
+        <Route path='/dashboard' element={isSignedIn ? <DashboardPage /> : <Navigate to={"/"} />} />
+        <Route path='/problems' element={isSignedIn ? <ProblemsPage /> : <Navigate to={"/"} />} />
+        <Route path='/problem/:id' element={isSignedIn ? <ProblemPage /> : <Navigate to={"/"} />} />
+        <Route path='/my-problems' element={isSignedIn ? <MyProblemsPage /> : <Navigate to={"/"} />} />
+        <Route path='/my-problems/new' element={isSignedIn ? <ProblemEditorPage /> : <Navigate to={"/"} />} />
+        <Route path='/my-problems/:id/edit' element={isSignedIn ? <ProblemEditorPage /> : <Navigate to={"/"} />} />
+        <Route path='/interviews' element={isSignedIn ? <InterviewHistoryPage /> : <Navigate to={"/"} />} />
+        <Route path='/interviews/new' element={isSignedIn ? <InterviewSetupPage /> : <Navigate to={"/"} />} />
+        <Route path='/analytics' element={isSignedIn ? <AnalyticsPage /> : <Navigate to={"/"} />} />
+        <Route path='/supervisor' element={isSignedIn ? <SupervisorDashboardPage /> : <Navigate to={"/"} />} />
+        <Route path='/session/:id' element={isSignedIn ? <InterviewErrorBoundary><SessionPage /></InterviewErrorBoundary> : <Navigate to={"/"} />} />
+        <Route path='/session/:id/review' element={isSignedIn ? <SessionReviewPage /> : <Navigate to={"/"} />} />
+        <Route path='/session/:id/report' element={isSignedIn ? <SessionReportPage /> : <Navigate to={"/"} />} />
       </Routes>
 
       <Toaster toastOptions={{ duration: 3000 }} />
