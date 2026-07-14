@@ -305,8 +305,7 @@ function SessionPage() {
   if (!session) return null;
 
   if (session.status === "completed") {
-    navigate(`/session/${id}/review`);
-    return null;
+    return <div className="min-h-screen bg-base-200 flex items-center justify-center"><Loader2Icon className="size-10 animate-spin text-primary" /></div>;
   }
 
   if (!shouldConnectToCall) {

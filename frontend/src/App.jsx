@@ -14,6 +14,7 @@ import MyProblemsPage from './pages/MyProblemsPage'
 import ProblemEditorPage from './pages/ProblemEditorPage'
 import SessionReportPage from './pages/SessionReportPage'
 import SupervisorDashboardPage from './pages/SupervisorDashboardPage'
+import InterviewErrorBoundary from './components/InterviewErrorBoundary'
 
 function App() {
 
@@ -36,7 +37,7 @@ function App() {
         <Route path='/interviews/new' element={isSignedIn ? <InterviewSetupPage /> : <Navigate to={"/"} />} />
         <Route path='/analytics' element={isSignedIn ? <AnalyticsPage /> : <Navigate to={"/"} />} />
         <Route path='/supervisor' element={isSignedIn ? <SupervisorDashboardPage /> : <Navigate to={"/"} />} />
-        <Route path='/session/:id' element={isSignedIn ? <SessionPage /> : <Navigate to={"/"} />} />
+        <Route path='/session/:id' element={isSignedIn ? <InterviewErrorBoundary><SessionPage /></InterviewErrorBoundary> : <Navigate to={"/"} />} />
         <Route path='/session/:id/review' element={isSignedIn ? <SessionReviewPage /> : <Navigate to={"/"} />} />
         <Route path='/session/:id/report' element={isSignedIn ? <SessionReportPage /> : <Navigate to={"/"} />} />
       </Routes>
