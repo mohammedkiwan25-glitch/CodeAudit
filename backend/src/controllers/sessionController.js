@@ -311,14 +311,6 @@ export async function joinSession(req, res) {
         //check if session is full and has participant
         if (session.participant) return res.status(409).json({ msg: "Session is already full" })
 
-        // Clerk/Mongo user creation can finish before the Stream webhook syncs.
-        // Upserting here makes invite joins reliable for newly registered users.
-        await streamClient.upsertUsers([{
-            id: clerkId,
-            name: req.user.name,
-            image: req.user.profileImage,
-        }])
-
         const call = streamClient.video.call("default", session.callId)
         await call.updateCallMembers({
             update_members: [{ user_id: clerkId }],
