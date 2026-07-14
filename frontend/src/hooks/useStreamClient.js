@@ -42,12 +42,6 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
 
         videoCall = client.call("default", callId);
         await videoCall.join();
-        try {
-          await videoCall.camera.enable();
-        } catch (cameraError) {
-          console.error("Failed to enable camera", cameraError);
-          toast.error("Camera could not start. Check browser camera permission.");
-        }
         if (cancelled) return;
         setCall(videoCall);
 
