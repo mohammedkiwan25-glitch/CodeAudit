@@ -49,7 +49,9 @@ export const useSessionById = (id, inviteToken) => {
         queryFn: () => sessionApi.getSessionById(id, inviteToken),
         enabled: !!id,
         retry: false,
-        refetchInterval: (query) => (query.state.error ? false : 1000), // keep syncing only while the session loads successfully
+        refetchInterval: (query) =>
+            query.state.data?.session?.status === "active" && !query.state.error ? 1000 : false,
+        refetchOnWindowFocus: false,
     });
 
     return result;

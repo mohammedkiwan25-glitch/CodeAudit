@@ -14,6 +14,7 @@ const toClientProblem = (problem) => ({
     expectedOutput: problem.expectedOutput,
     source: problem.source,
     isPublic: problem.isPublic,
+    isArchived: problem.isArchived,
     createdBy: problem.createdBy,
     createdAt: problem.createdAt,
     updatedAt: problem.updatedAt,
@@ -43,6 +44,7 @@ const normalizeProblemInput = (body) => ({
 export async function getProblems(req, res) {
     try {
         const problems = await Problem.find({
+            isArchived: { $ne: true },
             $or: [{ isPublic: true }, { createdBy: req.user._id }],
         }).sort({ source: 1, createdAt: 1 });
         res.status(200).json({ problems: problems.map(toClientProblem) });
@@ -56,6 +58,7 @@ export async function getProblemBySlug(req, res) {
     try {
         const problem = await Problem.findOne({
             slug: req.params.slug.toLowerCase(),
+            isArchived: { $ne: true },
             $or: [{ isPublic: true }, { createdBy: req.user._id }],
         });
 
@@ -72,10 +75,10 @@ export async function getProblemBySlug(req, res) {
 
 export async function getMyProblems(req, res) {
     try {
-        const problems = await Problem.find({
-            source: "custom",
-            createdBy: req.user._id,
-        }).sort({ updatedAt: -1 })
+        const query = req.user.role === "supervisor"
+            ? { isArchived: { $ne: true } }
+            : { source: "custom", createdBy: req.user._id, isArchived: { $ne: true } }
+        const problems = await Problem.find(query).sort({ source: 1, updatedAt: -1 })
 
         res.status(200).json({ problems: problems.map(toClientProblem) })
     } catch (error) {
@@ -105,7 +108,8 @@ export async function createProblem(req, res) {
         const problem = await Problem.create({
             ...input,
             slug,
-            source: "custom",
+            source: req.user.role === "supervisor" ? "built-in" : "custom",
+            isPublic: req.user.role === "supervisor" ? true : input.isPublic,
             createdBy: req.user._id,
         })
 
@@ -118,11 +122,10 @@ export async function createProblem(req, res) {
 
 export async function updateProblem(req, res) {
     try {
-        const problem = await Problem.findOne({
-            _id: req.params.id,
-            source: "custom",
-            createdBy: req.user._id,
-        })
+        const query = req.user.role === "supervisor"
+            ? { _id: req.params.id, isArchived: { $ne: true } }
+            : { _id: req.params.id, source: "custom", createdBy: req.user._id, isArchived: { $ne: true } }
+        const problem = await Problem.findOne(query)
 
         if (!problem) return res.status(404).json({ msg: "Custom problem not found" })
 
@@ -146,13 +149,21 @@ export async function updateProblem(req, res) {
 
 export async function deleteProblem(req, res) {
     try {
-        const problem = await Problem.findOneAndDelete({
-            _id: req.params.id,
-            source: "custom",
-            createdBy: req.user._id,
-        })
+        const query = req.user.role === "supervisor"
+            ? { _id: req.params.id, isArchived: { $ne: true } }
+            : { _id: req.params.id, source: "custom", createdBy: req.user._id, isArchived: { $ne: true } }
+        const problem = await Problem.findOne(query)
 
         if (!problem) return res.status(404).json({ msg: "Custom problem not found" })
+
+        if (problem.source === "built-in") {
+            problem.isArchived = true
+            problem.isPublic = false
+            await problem.save()
+        } else {
+            await problem.deleteOne()
+        }
+
         res.status(200).json({ msg: "Problem deleted" })
     } catch (error) {
         console.error("Error deleting problem:", error)

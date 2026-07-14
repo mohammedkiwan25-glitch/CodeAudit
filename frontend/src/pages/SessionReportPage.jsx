@@ -17,6 +17,12 @@ const EMPTY_RUBRIC = Object.fromEntries(RUBRIC_ITEMS.map(({ key }) => [key, ""])
 const EMPTY_REPORT = { outcome: "pending", rubric: EMPTY_RUBRIC, strengths: "", improvements: "", notes: "" };
 const OUTCOMES = { pending: "Pending decision", "strong-hire": "Strong hire", hire: "Hire", "no-hire": "No hire" };
 const SCORE_LABELS = { 1: "Needs improvement", 2: "Developing", 3: "Meets expectations", 4: "Strong", 5: "Excellent" };
+const formatDuration = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (!hours) return `${remainder}mins`;
+  return remainder ? `${hours}h ${remainder}mins` : `${hours}h`;
+};
 
 function SessionReportPage() {
   const { id } = useParams();
@@ -24,6 +30,7 @@ function SessionReportPage() {
   const { data, isLoading, isError } = useSessionById(id);
   const updateReport = useUpdateSessionReport();
   const [form, setForm] = useState(EMPTY_REPORT);
+  const [section, setSection] = useState("rubric");
   const [initialized, setInitialized] = useState(false);
   const session = data?.session;
   const isHost = session?.host?.clerkId === user?.id;
@@ -47,7 +54,7 @@ function SessionReportPage() {
   const rubricScores = Object.values(form.rubric).map(Number).filter((score) => score >= 1 && score <= 5);
   const calculatedRating = rubricScores.length
     ? (rubricScores.reduce((sum, score) => sum + score, 0) / rubricScores.length).toFixed(1)
-    : session.report?.rating || 0;
+    : session?.report?.rating || 0;
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -60,44 +67,39 @@ function SessionReportPage() {
   return (
     <div className="min-h-screen bg-base-200">
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mb-6">
           <div><p className="text-sm font-bold text-primary">Interview report</p><h1 className="text-3xl sm:text-4xl font-black mt-1">{session.problem}</h1><div className="flex flex-wrap gap-2 mt-3"><span className={`badge ${getDifficultyBadgeClass(session.difficulty)}`}>{session.difficulty}</span><span className="badge badge-ghost">{session.workspace?.language || "javascript"}</span><span className="badge badge-success">Completed</span></div></div>
-          <Link className="btn btn-outline" to={`/session/${id}/review`}>View Code & Output</Link>
         </div>
 
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-          <div className="bg-base-100 border border-base-300 rounded-lg p-4"><UsersIcon className="size-5 text-primary" /><p className="text-xs text-base-content/50 mt-3">Candidate</p><p className="font-bold mt-1 truncate">{session.participant?.name || "Not joined"}</p></div>
-          <div className="bg-base-100 border border-base-300 rounded-lg p-4"><Clock3Icon className="size-5 text-primary" /><p className="text-xs text-base-content/50 mt-3">Duration</p><p className="font-bold mt-1">{duration} minutes</p></div>
-          <div className="bg-base-100 border border-base-300 rounded-lg p-4"><CalendarIcon className="size-5 text-primary" /><p className="text-xs text-base-content/50 mt-3">Completed</p><p className="font-bold mt-1">{endedAt.toLocaleDateString()}</p></div>
-          <div className="bg-base-100 border border-base-300 rounded-lg p-4"><StarIcon className="size-5 text-primary" /><p className="text-xs text-base-content/50 mt-3">Overall score</p><p className="font-bold mt-1">{calculatedRating ? `${calculatedRating} / 5` : "Not rated"}</p></div>
-        </section>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-5 items-start">
+          <div className="bg-base-100 border border-base-300 rounded-lg overflow-hidden min-w-0">
+            <div className="grid grid-cols-2 bg-base-200 border-b border-base-300">
+              <button type="button" onClick={() => setSection("rubric")} className={`py-3.5 text-sm font-bold border-b-2 ${section === "rubric" ? "bg-base-100 border-primary text-primary" : "border-transparent text-base-content/55"}`}>Rubric</button>
+              <button type="button" onClick={() => setSection("feedback")} className={`py-3.5 text-sm font-bold border-b-2 ${section === "feedback" ? "bg-base-100 border-primary text-primary" : "border-transparent text-base-content/55"}`}>Feedback & Notes</button>
+            </div>
 
-        <form onSubmit={handleSubmit} className="bg-base-100 border border-base-300 rounded-lg p-5 sm:p-7">
-          <div className="flex items-start gap-3 mb-6"><div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"><FileTextIcon className="size-5" /></div><div><h2 className="text-xl font-black">Evaluation</h2><p className="text-sm text-base-content/55 mt-1">{isHost ? "Record a structured decision for this interview." : "Evaluation submitted by the interview host."}</p></div></div>
-          <fieldset disabled={!isHost || session.status !== "completed"} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-4 items-end">
-              <label className="form-control"><span className="label font-semibold">Outcome</span><select className="select select-bordered" value={form.outcome} onChange={(e) => setField("outcome", e.target.value)}>{Object.entries(OUTCOMES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <div className="bg-base-200 rounded-lg px-4 py-3"><p className="text-xs text-base-content/50">Calculated score</p><p className="text-xl font-black mt-1">{calculatedRating ? `${calculatedRating} / 5` : "Not rated"}</p></div>
-            </div>
-            <div className="border border-base-300 rounded-lg overflow-hidden">
-              <div className="px-4 py-3 bg-base-200 border-b border-base-300"><h3 className="font-black">Evaluation rubric</h3><p className="text-xs text-base-content/50 mt-1">Score each category from 1 (needs improvement) to 5 (excellent).</p></div>
-              <div className="divide-y divide-base-300">
-                {RUBRIC_ITEMS.map((item) => (
-                  <div key={item.key} className="p-4 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_140px] gap-3 sm:items-center">
-                    <div><p className="font-bold">{item.label}</p><p className="text-sm text-base-content/55 mt-1">{item.description}</p></div>
-                    <select className="select select-bordered select-sm w-full" value={form.rubric[item.key]} onChange={(e) => setField("rubric", { ...form.rubric, [item.key]: e.target.value })}><option value="">Not scored</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} - {SCORE_LABELS[score]}</option>)}</select>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="form-control"><span className="label font-semibold">Strengths</span><textarea className="textarea textarea-bordered min-h-32" value={form.strengths} onChange={(e) => setField("strengths", e.target.value)} placeholder="What went well?" /></label>
-              <label className="form-control"><span className="label font-semibold">Areas to improve</span><textarea className="textarea textarea-bordered min-h-32" value={form.improvements} onChange={(e) => setField("improvements", e.target.value)} placeholder="What could be improved?" /></label>
-            </div>
-            <label className="form-control"><span className="label font-semibold">Private interviewer notes</span><textarea className="textarea textarea-bordered min-h-36" value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Decision context and follow-up notes" /></label>
-          </fieldset>
-          {isHost && <div className="flex justify-end mt-6 pt-5 border-t border-base-300"><button className="btn btn-primary gap-2" disabled={updateReport.isPending}><SaveIcon className="size-4" /> Save Report</button></div>}
+            <fieldset disabled={!isHost || session.status !== "completed"}>
+              {section === "rubric" && <div className="p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6"><label className="flex flex-col gap-2 flex-1"><span className="font-semibold">Final outcome</span><select className="select select-bordered w-full" value={form.outcome} onChange={(e) => setField("outcome", e.target.value)}>{Object.entries(OUTCOMES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><div className="bg-primary/10 text-primary rounded-lg px-5 py-3 min-w-36"><p className="text-xs font-semibold">Overall score</p><p className="text-2xl font-black mt-0.5">{calculatedRating ? `${calculatedRating}/5` : "-"}</p></div></div>
+                <div className="space-y-3">{RUBRIC_ITEMS.map((item) => <div key={item.key} className="border border-base-300 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3"><div className="flex-1"><p className="font-bold">{item.label}</p><p className="text-xs text-base-content/50 mt-1">{item.description}</p></div><select className="select select-bordered select-sm w-full sm:w-44" value={form.rubric[item.key]} onChange={(e) => setField("rubric", { ...form.rubric, [item.key]: e.target.value })}><option value="">Not scored</option>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} - {SCORE_LABELS[score]}</option>)}</select></div>)}</div>
+              </div>}
+
+              {section === "feedback" && <div className="p-5 sm:p-6 space-y-5">
+                <label className="flex flex-col gap-2"><span className="font-semibold">Strengths</span><textarea className="textarea textarea-bordered w-full min-h-36" value={form.strengths} onChange={(e) => setField("strengths", e.target.value)} placeholder="What went well? Include specific evidence." /></label>
+                <label className="flex flex-col gap-2"><span className="font-semibold">Areas to improve</span><textarea className="textarea textarea-bordered w-full min-h-36" value={form.improvements} onChange={(e) => setField("improvements", e.target.value)} placeholder="What should the candidate improve?" /></label>
+                <label className="flex flex-col gap-2"><span className="font-semibold">Private interviewer notes</span><textarea className="textarea textarea-bordered w-full min-h-40" value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Decision context and internal follow-up." /></label>
+              </div>}
+            </fieldset>
+          </div>
+
+          <aside className="bg-base-100 border border-base-300 rounded-lg p-5 lg:sticky lg:top-24">
+            <div className="flex items-center gap-3"><UsersIcon className="size-5 text-primary" /><div className="min-w-0"><p className="text-xs text-base-content/50">Candidate</p><p className="font-bold truncate">{session.participant?.name || "Not joined"}</p></div></div>
+            <div className="grid grid-cols-2 gap-4 mt-5 pt-5 border-t border-base-300"><div><Clock3Icon className="size-4 text-primary" /><p className="text-xs text-base-content/50 mt-2">Duration</p><p className="font-bold text-sm mt-1">{formatDuration(duration)}</p></div><div><CalendarIcon className="size-4 text-primary" /><p className="text-xs text-base-content/50 mt-2">Completed</p><p className="font-bold text-sm mt-1">{endedAt.toLocaleDateString()}</p></div></div>
+            <div className="mt-5 p-4 rounded-lg bg-primary/10 text-primary"><div className="flex items-center gap-2"><StarIcon className="size-4" /><p className="text-xs font-bold">Overall score</p></div><p className="text-3xl font-black mt-2">{calculatedRating ? calculatedRating : "-"}<span className="text-base font-semibold"> / 5</span></p></div>
+            <Link className="btn btn-outline btn-sm w-full mt-5" to={`/session/${id}/review`}><FileTextIcon className="size-4" /> Code & Output</Link>
+            {isHost && <button className="btn btn-primary w-full gap-2 mt-3" disabled={updateReport.isPending}><SaveIcon className="size-4" /> Save Report</button>}
+          </aside>
         </form>
       </main>
     </div>
