@@ -1,7 +1,8 @@
 import {
   CallControls,
   CallingState,
-  PaginatedGridLayout,
+  ParticipantView,
+  ParticipantsAudio,
   useCallStateHooks,
 } from "@stream-io/video-react-sdk";
 import { Loader2Icon, MessageSquareIcon, UsersIcon, XIcon } from "lucide-react";
@@ -14,9 +15,11 @@ import "stream-chat-react/dist/css/v2/index.css";
 
 function VideoCallUI({ chatClient, channel }) {
   const navigate = useNavigate();
-  const { useCallCallingState, useParticipantCount } = useCallStateHooks();
+  const { useCallCallingState, useParticipantCount, useParticipants } = useCallStateHooks();
   const callingState = useCallCallingState();
   const participantCount = useParticipantCount();
+  const callParticipants = useParticipants();
+  const participants = Array.isArray(callParticipants) ? callParticipants.filter(Boolean).slice(0, 2) : [];
   const visibleParticipantCount = Math.min(participantCount, 2);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -56,7 +59,12 @@ function VideoCallUI({ chatClient, channel }) {
         </div>
 
         <div className="flex-1 min-h-0 rounded-lg overflow-hidden bg-base-300">
-          <PaginatedGridLayout groupSize={2} pageArrowsVisible={false} />
+          <ParticipantsAudio participants={participants} />
+          <div className={`codeaudit-video-grid ${participants.length > 1 ? "has-two" : ""}`}>
+            {participants.map((participant) => (
+              <ParticipantView key={participant.sessionId} participant={participant} />
+            ))}
+          </div>
         </div>
 
         <div className="bg-base-100 px-3 py-1.5 rounded-lg shadow flex justify-center shrink-0 overflow-x-auto">
