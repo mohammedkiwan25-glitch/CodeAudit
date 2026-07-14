@@ -90,7 +90,8 @@ export async function createSession(req, res) {
 
         //create stream video call
 
-        await streamClient.video.call("default", callId).getOrCreate({
+        const videoCall = streamClient.video.call("default", callId)
+        await videoCall.getOrCreate({
             data: {
                 created_by_id: clerkId,
                 custom: {
@@ -99,6 +100,9 @@ export async function createSession(req, res) {
                     sessionId: session._id.toString(),
                 },
             },
+        })
+        await videoCall.updateCallMembers({
+            update_members: [{ user_id: clerkId }],
         })
 
         //chat messaging
@@ -307,11 +311,16 @@ export async function joinSession(req, res) {
         //check if session is full and has participant
         if (session.participant) return res.status(409).json({ msg: "Session is already full" })
 
-        session.participant = userId
-        await session.save()
+        const call = streamClient.video.call("default", session.callId)
+        await call.updateCallMembers({
+            update_members: [{ user_id: clerkId }],
+        })
 
         const channel = chatClient.channel("messaging", session.callId)
         await channel.addMembers([clerkId])
+
+        session.participant = userId
+        await session.save()
 
         res.status(200).json({ msg: "Joined session successfully" })
 

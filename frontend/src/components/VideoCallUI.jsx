@@ -18,7 +18,8 @@ function VideoCallUI({ chatClient, channel }) {
   const { useCallCallingState, useParticipantCount, useParticipants } = useCallStateHooks();
   const callingState = useCallCallingState();
   const participantCount = useParticipantCount();
-  const participants = useParticipants().slice(0, 2);
+  const callParticipants = useParticipants();
+  const participants = Array.isArray(callParticipants) ? callParticipants.filter(Boolean).slice(0, 2) : [];
   const visibleParticipantCount = Math.min(participantCount, 2);
   const [isChatOpen, setIsChatOpen] = useState(false);
 

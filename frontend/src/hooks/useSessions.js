@@ -50,7 +50,7 @@ export const useSessionById = (id, inviteToken) => {
         enabled: !!id,
         retry: false,
         refetchInterval: (query) =>
-            query.state.data?.session?.status === "active" && !query.state.error ? 1000 : false,
+            query.state.data?.session?.status === "active" && !query.state.error ? 5000 : false,
         refetchOnWindowFocus: false,
     });
 
