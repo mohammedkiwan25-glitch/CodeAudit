@@ -250,7 +250,7 @@ function SessionPage() {
     if (!session?.inviteToken) return;
 
     const appUrl = (import.meta.env.VITE_CLIENT_URL || window.location.origin).replace(/\/$/, "");
-    const inviteUrl = `${appUrl}/session/${session._id}?invite=${session.inviteToken}`;
+    const inviteUrl = `${appUrl}/session/${session._id}?invite=${encodeURIComponent(session.inviteToken)}`;
 
     try {
       await navigator.clipboard.writeText(inviteUrl);
