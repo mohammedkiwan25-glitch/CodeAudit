@@ -312,8 +312,10 @@ export async function joinSession(req, res) {
         if (session.participant) return res.status(409).json({ msg: "Session is already full" })
 
         const call = streamClient.video.call("default", session.callId)
-        await call.updateCallMembers({
-            update_members: [{ user_id: clerkId }],
+        await call.getOrCreate({
+            data: {
+                members: [{ user_id: clerkId }],
+            },
         })
 
         const channel = chatClient.channel("messaging", session.callId)
