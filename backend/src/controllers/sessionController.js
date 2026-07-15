@@ -314,8 +314,11 @@ export async function joinSession(req, res) {
         const call = streamClient.video.call("default", session.callId)
         await call.getOrCreate({
             data: {
-                members: [{ user_id: clerkId }],
+                created_by_id: clerkId,
             },
+        })
+        await call.updateCallMembers({
+            update_members: [{ user_id: clerkId}],
         })
 
         const channel = chatClient.channel("messaging", session.callId)
